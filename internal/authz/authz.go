@@ -42,19 +42,34 @@ func (r Role) Valid() bool {
 type Permission string
 
 const (
-	PermDashboardView Permission = "dashboard.view"
-	PermClaimsView    Permission = "claims.view"
-	PermReportsView   Permission = "reports.view"
-	PermUsersManage   Permission = "users.manage"
+	PermDashboardView    Permission = "dashboard.view"
+	PermClaimsView       Permission = "claims.view"
+	PermClaimsCreate     Permission = "claims.create"
+	PermClaimsEdit       Permission = "claims.edit"
+	PermClaimsTransition Permission = "claims.transition"
+	// PermClaimsViewAll: melihat seluruh klaim tim, bukan hanya yang ditugaskan.
+	PermClaimsViewAll Permission = "claims.view_all"
+	// PermClaimsReassign: mengubah petugas yang ditugaskan pada klaim.
+	PermClaimsReassign Permission = "claims.reassign"
+	PermReportsView    Permission = "reports.view"
+	PermUsersManage    Permission = "users.manage"
 )
 
 // ErrForbidden dikembalikan bila peran tidak memiliki izin.
 var ErrForbidden = errors.New("akses tidak diizinkan")
 
+// Admin sengaja tidak memiliki izin klaim apa pun (tidak mengakses data klaim).
 var matrix = map[Role]map[Permission]bool{
-	RoleClaimsOfficer: {PermDashboardView: true, PermClaimsView: true},
-	RoleSupervisor:    {PermDashboardView: true, PermClaimsView: true, PermReportsView: true},
-	RoleAdmin:         {PermDashboardView: true, PermReportsView: true, PermUsersManage: true},
+	RoleClaimsOfficer: {
+		PermDashboardView: true, PermClaimsView: true, PermClaimsCreate: true,
+		PermClaimsEdit: true, PermClaimsTransition: true,
+	},
+	RoleSupervisor: {
+		PermDashboardView: true, PermClaimsView: true, PermClaimsCreate: true,
+		PermClaimsEdit: true, PermClaimsTransition: true, PermClaimsViewAll: true,
+		PermClaimsReassign: true, PermReportsView: true,
+	},
+	RoleAdmin: {PermDashboardView: true, PermReportsView: true, PermUsersManage: true},
 }
 
 // Can melaporkan apakah role memiliki permission. Peran tak dikenal selalu ditolak.
@@ -69,6 +84,20 @@ func Require(role Role, perm Permission) error {
 		return ErrForbidden
 	}
 	return nil
+}
+
+// CanAccessClaim adalah kebijakan akses per klaim (object-level):
+//   - Supervisor: seluruh klaim tim (demo: satu tim, jadi seluruh klaim).
+//   - Claims Officer: hanya klaim yang ditugaskan kepadanya.
+//   - Admin/peran lain: tidak pernah.
+func CanAccessClaim(role Role, userID int64, assignedTo *int64) bool {
+	if !Can(role, PermClaimsView) {
+		return false
+	}
+	if Can(role, PermClaimsViewAll) {
+		return true
+	}
+	return assignedTo != nil && *assignedTo == userID
 }
 
 // MenuItem adalah satu entri navigasi.

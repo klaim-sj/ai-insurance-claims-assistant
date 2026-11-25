@@ -1,0 +1,74 @@
+{{define "content"}}
+{{with .Data}}{{with .D}}
+<nav aria-label="Breadcrumb" class="text-sm"><a href="/claims" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Klaim</a> / {{.Claim.ClaimNumber}}</nav>
+<div class="mt-2 flex flex-wrap items-center justify-between gap-4">
+  <h1 class="flex flex-wrap items-center gap-3 text-2xl font-bold tracking-tight">
+    {{.Claim.ClaimNumber}}
+    <span class="rounded-full px-2.5 py-0.5 text-sm font-medium {{.Status.BadgeClass}}">{{.Status.Label}}</span>
+  </h1>
+  {{if $.Data.CanEdit}}
+  <a href="/claims/{{.Claim.ID}}/edit" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Ubah data</a>
+  {{end}}
+</div>
+
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+    <section aria-labelledby="summary-heading" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 id="summary-heading" class="text-base font-semibold">Data ringkas</h2>
+      <dl class="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+        <div><dt class="text-slate-500">Nama pemohon</dt><dd class="mt-1 font-medium">{{.Claim.ClaimantName}}</dd></div>
+        <div><dt class="text-slate-500">Nomor polis</dt><dd class="mt-1 font-medium">{{.Claim.PolicyNumber}}</dd></div>
+        <div><dt class="text-slate-500">Jenis produk</dt><dd class="mt-1 font-medium">{{.Claim.ProductType}}</dd></div>
+        <div><dt class="text-slate-500">Tanggal diterima</dt><dd class="mt-1 font-medium">{{date .Claim.ReceivedAt}}</dd></div>
+        <div><dt class="text-slate-500">Petugas</dt><dd class="mt-1 font-medium">{{if .AssigneeName}}{{.AssigneeName}}{{else}}—{{end}}</dd></div>
+        <div><dt class="text-slate-500">Terakhir diperbarui</dt><dd class="mt-1 font-medium">{{datetime .Claim.UpdatedAt}}</dd></div>
+      </dl>
+    </section>
+
+    {{if .NextStatuses}}
+    <section aria-labelledby="transition-heading" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 id="transition-heading" class="text-base font-semibold">Ubah status administrasi</h2>
+      <p class="mt-1 text-xs text-slate-500">Status administrasi bukan keputusan manfaat klaim. Alasan wajib untuk “Perlu dokumen” dan “Ditutup”.</p>
+      <form method="post" action="/claims/{{.Claim.ID}}/status" class="mt-4 space-y-4">
+        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+        <fieldset>
+          <legend class="text-sm font-medium text-slate-700">Status tujuan</legend>
+          <div class="mt-2 flex flex-wrap gap-3">
+            {{range .NextStatuses}}
+            <label class="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">
+              <input type="radio" name="to" value="{{.}}" required {{if eq (print .) $.Data.TransitionTo}}checked{{end}} class="focus:ring-indigo-500">
+              {{.Label}}{{if reasonRequired .}} <span class="text-xs text-slate-500">(wajib alasan)</span>{{end}}
+            </label>
+            {{end}}
+          </div>
+        </fieldset>
+        <div>
+          <label for="reason" class="block text-sm font-medium text-slate-700">Alasan / catatan</label>
+          <textarea id="reason" name="reason" rows="3" maxlength="500" aria-describedby="reason-help"
+                    class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">{{$.Data.TransitionNote}}</textarea>
+          <p id="reason-help" class="mt-1 text-xs text-slate-500">Maksimal 500 karakter. Jangan menulis data pribadi atau informasi medis.</p>
+        </div>
+        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2">Simpan status</button>
+      </form>
+    </section>
+    {{end}}
+  </div>
+
+  <section aria-labelledby="timeline-heading" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 id="timeline-heading" class="text-base font-semibold">Timeline status</h2>
+    <ol class="mt-4 space-y-4 border-l border-slate-200 pl-4">
+      {{range .History}}
+      <li class="relative">
+        <span class="absolute -left-5 top-1.5 h-2 w-2 rounded-full bg-indigo-500" aria-hidden="true"></span>
+        <p class="text-sm font-medium">
+          {{if .OldStatus}}{{.OldStatus.Label}} → {{.NewStatus.Label}}{{else}}Klaim dibuat ({{.NewStatus.Label}}){{end}}
+        </p>
+        <p class="text-xs text-slate-500">{{datetime .CreatedAt}} · {{if .BySystem}}Sistem{{else}}{{.ChangedByName}}{{end}}</p>
+        {{if .Reason}}<p class="mt-1 whitespace-pre-line rounded bg-slate-50 px-2 py-1 text-sm text-slate-700">{{.Reason}}</p>{{end}}
+      </li>
+      {{end}}
+    </ol>
+  </section>
+</div>
+{{end}}{{end}}
+{{end}}

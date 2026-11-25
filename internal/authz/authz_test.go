@@ -66,3 +66,42 @@ func TestMenuFor(t *testing.T) {
 		t.Fatal("peran tak dikenal tidak boleh punya menu")
 	}
 }
+
+func TestClaimPermissions(t *testing.T) {
+	claimPerms := []Permission{PermClaimsView, PermClaimsCreate, PermClaimsEdit,
+		PermClaimsTransition, PermClaimsViewAll, PermClaimsReassign}
+	for _, p := range claimPerms {
+		if Can(RoleAdmin, p) {
+			t.Errorf("admin tidak boleh punya izin klaim %q", p)
+		}
+		if !Can(RoleSupervisor, p) {
+			t.Errorf("supervisor harus punya izin %q", p)
+		}
+	}
+	if Can(RoleClaimsOfficer, PermClaimsViewAll) || Can(RoleClaimsOfficer, PermClaimsReassign) {
+		t.Fatal("officer tidak boleh melihat semua klaim atau reassign")
+	}
+}
+
+func TestCanAccessClaim(t *testing.T) {
+	own, other := int64(10), int64(20)
+	cases := []struct {
+		name     string
+		role     Role
+		assigned *int64
+		want     bool
+	}{
+		{"officer klaim sendiri", RoleClaimsOfficer, &own, true},
+		{"officer klaim orang lain", RoleClaimsOfficer, &other, false},
+		{"officer klaim tanpa petugas", RoleClaimsOfficer, nil, false},
+		{"supervisor klaim mana pun", RoleSupervisor, &other, true},
+		{"supervisor klaim tanpa petugas", RoleSupervisor, nil, true},
+		{"admin klaim sendiri pun tidak", RoleAdmin, &own, false},
+		{"peran tak dikenal", Role("x"), &own, false},
+	}
+	for _, c := range cases {
+		if got := CanAccessClaim(c.role, own, c.assigned); got != c.want {
+			t.Errorf("%s: got %v want %v", c.name, got, c.want)
+		}
+	}
+}

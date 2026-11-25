@@ -46,6 +46,21 @@ type ClaimDocument struct {
 	UpdatedAt        time.Time
 }
 
+type ClaimNumberCounter struct {
+	Prefix    string
+	LastValue int64
+}
+
+type ClaimStatusHistory struct {
+	ID        int64
+	ClaimID   int64
+	OldStatus *string
+	NewStatus string
+	ChangedBy *int64
+	Reason    *string
+	CreatedAt time.Time
+}
+
 type Session struct {
 	Token  string
 	Data   []byte
