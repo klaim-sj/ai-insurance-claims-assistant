@@ -13,6 +13,15 @@ menyimpulkan kelayakan/fraud. Keputusan akhir selalu pada manusia.
   opsi untuk development lokal.
 - Aset frontend (htmx.min.js, CSS hasil build Tailwind) disimpan di
   web/static dan di-commit, agar aplikasi jalan tanpa Node.js.
+- goose dan sqlc terpasang di `$(go env GOPATH)/bin`, yang tidak dijamin
+  ada di PATH. Makefile mendefinisikan `GOBIN := $(shell go env GOPATH)/bin`
+  dan memanggil `$(GOBIN)/goose` serta `$(GOBIN)/sqlc`; selalu pakai
+  target make (`make migrate-up`, `make sqlc`), jangan memanggil
+  `goose`/`sqlc` langsung.
+- Dependensi harus kompatibel Go 1.24: jangan `go get ...@latest` tanpa
+  cek directive `go` modul (beberapa versi terbaru menuntut Go 1.25+).
+  Gunakan `GOTOOLCHAIN=local` saat menambah dependensi.
+- Tailwind memakai standalone CLI (`make css`, diunduh ke tmp/bin).
 
 ## Aturan wajib
 - Semua data SINTETIS: NIK diawali 0000, telepon 0800-0000-xxxx,
