@@ -1,0 +1,46 @@
+{{define "body"}}
+<div class="min-h-full">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 md:flex-nowrap lg:px-8">
+      <a href="/dashboard" class="rounded-md text-base font-semibold text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">AI Claims Assistant</a>
+
+      <button type="button" class="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 md:hidden"
+              data-menu-toggle aria-controls="main-nav" aria-expanded="false">
+        Menu
+      </button>
+
+      <nav id="main-nav" aria-label="Navigasi utama" class="hidden w-full md:block md:w-auto" data-menu>
+        <ul class="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
+          {{range .Menu}}
+          <li>
+            <a href="{{.Path}}"
+               class="block rounded-md px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 {{if eq .Path $.Active}}bg-indigo-50 text-indigo-700{{else}}text-slate-700 hover:bg-slate-100{{end}}"
+               {{if eq .Path $.Active}}aria-current="page"{{end}}>{{.Label}}</a>
+          </li>
+          {{end}}
+        </ul>
+      </nav>
+    </div>
+    <div class="border-t border-slate-100 bg-slate-50">
+      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm sm:px-6 lg:px-8">
+        <p class="text-slate-600">
+          Masuk sebagai <span class="font-medium text-slate-900">{{.User.Name}}</span>
+          <span class="ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">{{.User.Role.Label}}</span>
+        </p>
+        <form method="post" action="/logout">
+          <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+          <button type="submit" class="rounded-md px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Keluar</button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" class="mx-auto max-w-7xl px-4 py-8 focus:outline-none sm:px-6 lg:px-8">
+    {{template "content" .}}
+  </main>
+
+  <footer class="mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-500 sm:px-6 lg:px-8">
+    Aplikasi demonstrasi dengan data sintetis. Keputusan akhir klaim selalu berada pada petugas berwenang.
+  </footer>
+</div>
+{{end}}
