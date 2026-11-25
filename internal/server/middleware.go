@@ -125,13 +125,11 @@ func (s *Server) csrf(next http.Handler) http.Handler {
 		switch r.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
 		default:
-			limit := int64(maxFormBytes)
-			// Batas besar hanya untuk route unggah dan session yang sudah login,
-			// agar klien anonim tidak bisa mengirim body besar.
-			if isMultipart(r) && uploadPathRe.MatchString(r.URL.Path) && s.sm.GetInt64(ctx, sessUserID) != 0 {
-				limit = maxUploadBytes
+			// Body unggah sudah dibatasi oleh uploadBody (batas total unggah);
+			// request lain selalu dibatasi maxFormBytes.
+			if !isUploadRequest(ctx) {
+				r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
 			}
-			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			if isMultipart(r) {
 				if err := r.ParseMultipartForm(uploadMemory); err != nil {
 					var mbe *http.MaxBytesError
