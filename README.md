@@ -69,9 +69,16 @@ go install github.com/pressly/goose/v3/cmd/goose@v3.26.0
 bash scripts/install-sqlc.sh
 ```
 
-`sqlc` dipasang dari binary rilis v1.31.1 (checksum SHA-256 dipin di
-skrip, khusus Linux) karena `go install` sqlc v1.31.1 menuntut Go 1.26.
-Di macOS, pasang sqlc v1.31.1 dari rilis resminya atau package manager.
+`sqlc` dipasang dari binary rilis v1.31.1 (khusus Linux) karena
+`go install` sqlc v1.31.1 menuntut Go 1.26. Di macOS, pasang sqlc v1.31.1
+dari rilis resminya atau package manager.
+
+> **Catatan checksum:** upstream sqlc tidak menerbitkan file checksum untuk
+> rilisnya. Hash SHA-256 di `scripts/install-sqlc.sh` **dihitung sendiri**
+> dari aset rilis v1.31.1 saat skrip dibuat, lalu dipin. Hash ini hanya
+> mendeteksi bila aset berubah setelah itu; ia bukan verifikasi dari
+> upstream. Saat menaikkan versi, unduh aset baru, hitung ulang hash-nya
+> (`sha256sum`), dan perbarui versi serta hash bersamaan.
 
 Opsional, PostgreSQL via Docker (hanya untuk lokal; membuat `claims_dev`
 dan `claims_test`):
