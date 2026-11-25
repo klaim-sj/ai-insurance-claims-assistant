@@ -1,5 +1,7 @@
 # AI Insurance Claims Assistant
 
+[![CI](https://github.com/klaim-sj/ai-insurance-claims-assistant/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/klaim-sj/ai-insurance-claims-assistant/actions/workflows/ci.yml)
+
 Proyek portofolio pribadi: aplikasi web *decision-support* untuk membantu
 petugas klaim memeriksa dokumen, menemukan ketidaksesuaian, dan menyiapkan
 ringkasan pemeriksaan.
@@ -64,8 +66,12 @@ go install github.com/pressly/goose/v3/cmd/goose@v3.26.0
 ```
 
 ```bash
-go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
+bash scripts/install-sqlc.sh
 ```
+
+`sqlc` dipasang dari binary rilis v1.31.1 (checksum SHA-256 dipin di
+skrip, khusus Linux) karena `go install` sqlc v1.31.1 menuntut Go 1.26.
+Di macOS, pasang sqlc v1.31.1 dari rilis resminya atau package manager.
 
 Opsional, PostgreSQL via Docker (hanya untuk lokal; membuat `claims_dev`
 dan `claims_test`):
@@ -124,6 +130,56 @@ seluruhnya ditugaskan ke `officer@example.com`, produk "Kesehatan (simulasi)":
 | CLM-DEMO-0003 | Andi Pratama | POL-DEMO-0003 | Perlu dokumen |
 
 Halaman Laporan dan Pengguna masih placeholder (tahap berikutnya).
+
+## Mencoba di Codespaces
+
+Repositori menyediakan `.devcontainer/` (Go 1.24 + PostgreSQL 16 dengan
+database `claims_dev` dan `claims_test`). Saat codespace dibuat,
+`postCreateCommand` memasang goose v3.26.0 dan sqlc v1.31.1 lalu
+menjalankan `make migrate-up`. `DATABASE_URL`/`TEST_DATABASE_URL` sudah
+diset otomatis; kredensial database hanya berlaku di dalam codespace.
+
+1. **Isi secrets dulu** (tidak pernah disimpan di repo): GitHub →
+   *Settings* → *Codespaces* → *Secrets* → *New secret*, lalu beri akses ke
+   repositori ini:
+
+   | Secret | Isi |
+   |---|---|
+   | `DEMO_PASSWORD` | Password akun demo, minimal 12 karakter. Buat baru, jangan pakai ulang password lain. |
+   | `APP_SECRET` | Minimal 32 karakter, mis. hasil `openssl rand -base64 48`. Opsional di development (bila kosong dipakai nilai acak sementara). |
+
+   Kedua secret juga dideklarasikan di `devcontainer.json`, sehingga
+   halaman *Create codespace* (opsi *Advanced*) meminta nilainya bila belum
+   ada. Secret yang ditambah/diubah setelah codespace berjalan baru terbaca
+   setelah codespace di-*rebuild* atau di-*restart*.
+2. **Buat codespace**: tombol *Code* → tab *Codespaces* → *Create
+   codespace on main*. Tunggu sampai `postCreateCommand` selesai.
+3. **Seed dan jalankan** di terminal codespace:
+
+   ```bash
+   make seed
+   ```
+
+   ```bash
+   make run
+   ```
+
+4. **Buka port 8080** dari notifikasi yang muncul atau tab *Ports* →
+   *Open in Browser*. Port di-forward dengan visibility **private**
+   (hanya akun Anda yang bisa membuka); jangan ubah menjadi public.
+   Login memakai akun demo (lihat *Akun demo* di atas) dengan password `DEMO_PASSWORD`.
+
+Jangan membuat file `.env` di codespace kecuali perlu; bila ada, nilainya
+menimpa environment variable dari codespace (Makefile memuat `.env`).
+
+## Continuous integration
+
+`.github/workflows/ci.yml` berjalan pada push ke `main` dan setiap pull
+request dengan permission minimal (`contents: read`): service PostgreSQL
+16, `gofmt` check, `go vet`, `sqlc diff`, dan `go test -race`. Kredensial
+database CI adalah nilai sintetis yang ditulis di workflow, sedangkan
+`APP_SECRET` dan `DEMO_PASSWORD` dibuat acak per run (`openssl rand`) dan
+di-mask di log. Workflow tidak memakai secret repositori.
 
 ## Manajemen klaim (Tahap 2)
 

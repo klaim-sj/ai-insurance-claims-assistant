@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOTOOLCHAIN: local
+  # Kredensial PostgreSQL SINTETIS khusus CI: service container hanya hidup
+  # selama job ini dan tidak menyimpan data nyata. Bukan secret.
+  PGHOST: localhost
+  PGPORT: "5432"
+  PGUSER: claims_ci
+  PGPASSWORD: ci_only_not_a_secret
+  DATABASE_URL: postgres://claims_ci:ci_only_not_a_secret@localhost:5432/claims_dev?sslmode=disable
+  TEST_DATABASE_URL: postgres://claims_ci:ci_only_not_a_secret@localhost:5432/claims_test?sslmode=disable
+  APP_ENV: test
+
+jobs:
+  test:
+    name: vet, fmt, sqlc diff, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: claims_ci
+          POSTGRES_PASSWORD: ci_only_not_a_secret
+          POSTGRES_DB: claims_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U claims_ci -d claims_dev"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Buat nilai sintetis acak (APP_SECRET, DEMO_PASSWORD)
+        run: |
+          app_secret="$(openssl rand -hex 32)"
+          demo_password="$(openssl rand -hex 16)"
+          echo "::add-mask::${app_secret}"
+          echo "::add-mask::${demo_password}"
+          {
+            echo "APP_SECRET=${app_secret}"
+            echo "DEMO_PASSWORD=${demo_password}"
+          } >> "$GITHUB_ENV"
+
+      - name: Buat database test
+        run: psql -d claims_dev -v ON_ERROR_STOP=1 -c "CREATE DATABASE claims_test"
+
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "File berikut belum di-gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: sqlc diff
+        run: |
+          bash scripts/install-sqlc.sh
+          "$(go env GOPATH)/bin/sqlc" diff
+
+      - name: go test -race
+        run: go test -race -count=1 ./...
