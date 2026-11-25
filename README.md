@@ -25,8 +25,8 @@ Acuan desain: [`docs/blueprint.pdf`](docs/blueprint.pdf).
 |---|---|---|
 | 1. Fondasi | Skema DB, login/logout, session, CSRF, rate limit, RBAC, audit log, layout | ✅ |
 | 2. Claim CRUD | Buat/cari/lihat/ubah klaim, transisi status, timeline, otorisasi per klaim | ✅ |
-| 3. Dokumen | Upload privat, metadata, preview, validasi file | Berikutnya |
-| 4+ | OCR, validasi, AI summary, review, laporan | Direncanakan |
+| 3. Dokumen | Upload privat, metadata, preview, validasi file, data uji sintetis | ✅ |
+| 4+ | OCR, validasi, AI summary, review, laporan | Berikutnya: 4. OCR |
 
 ## Stack
 
@@ -46,12 +46,14 @@ internal/auth     argon2id, rate limiter, layanan login
 internal/authz    matriks role → izin → menu
 internal/audit    penulisan audit_logs
 internal/claims   layanan klaim: validasi, nomor otomatis, transisi status, daftar
+internal/documents unggah dokumen: validasi file, private storage, duplikat, akses
 internal/config   konfigurasi dari environment
 internal/db       kode hasil sqlc (jangan diedit manual)
 internal/server   router, middleware (CSRF, RBAC, header keamanan), handler
 internal/testutil database test terisolasi
 migrations/       migration goose (juga disematkan untuk test)
 db/queries/       query sqlc
+sample-data/      dokumen uji SINTETIS + expected.json (lihat sample-data/README.md)
 web/templates     template HTML
 web/static        CSS, htmx, app.js
 ```
@@ -228,6 +230,54 @@ di-mask di log. Workflow tidak memakai secret repositori.
   `status_changed` (status lama/baru dan `history_id`; isi alasan tidak
   disalin ke audit).
 
+## Dokumen klaim (Tahap 3)
+
+Unggah dan pratinjau dokumen langsung dari halaman detail klaim. Tahap ini
+**hanya** menyimpan file dan metadata; OCR/ekstraksi/AI belum ada.
+
+- **Unggah**: 1–5 file PDF/JPG/PNG per kiriman, satu jenis dokumen
+  (`formulir_klaim`, `identitas`, `surat_keterangan_medis`, `kuitansi`,
+  `lainnya`). Status awal `processing_status = uploaded` (siap untuk OCR).
+- **Validasi server-side** (`internal/documents/validate.go`), semua atau
+  tidak sama sekali (satu file ditolak → tidak ada yang disimpan):
+  - jenis file dari **magic bytes**, harus cocok dengan ekstensi (TC-02);
+  - maksimal 10 MB per file; body multipart dibatasi ±51 MB, dan batas
+    besar hanya berlaku di route unggah untuk sesi yang sudah login;
+  - PNG/JPEG: batas resolusi (anti *decompression bomb*) lalu decode penuh
+    untuk mendeteksi file rusak;
+  - PDF: header, `startxref`/`%%EOF`, tolak `/Encrypt`, 1–50 halaman
+    (termasuk objek halaman di *object stream* terkompresi, dengan batas
+    dekompresi). Ini pemeriksaan struktural ringan berbasis stdlib, **bukan**
+    parser PDF lengkap.
+- **Private storage**: `STORAGE_DIR` (default `storage/documents`, di luar
+  `web/static`, di-`.gitignore`). Nama file acak 128-bit (`ab/<32 hex>`),
+  tanpa nama asli/ekstensi, izin `0600`/`0700`, akses lewat `os.Root`.
+  Checksum SHA-256 disimpan. File dihapus lagi bila transaksi metadata gagal.
+- **Duplikat** (checksum sama dalam klaim yang sama, atau dua file identik
+  dalam satu kiriman): tidak disimpan, respons `409` dengan permintaan
+  konfirmasi; setelah dikonfirmasi disimpan dengan `duplicate_of`. Dengan
+  HTMX, file yang dipilih tetap ada saat konfirmasi.
+- **Pratinjau/unduh** hanya lewat `GET /claims/{id}/documents/{docID}`
+  (`?download=1` untuk lampiran): RBAC + akses per klaim di middleware
+  **dan** service, dokumen harus milik klaim di URL (anti IDOR → `404`).
+  Header: `Content-Disposition` dengan nama generik `dokumen-<id>.<ext>`,
+  `nosniff`, `Cache-Control: private, no-store`, CSP `default-src 'none'`
+  (gambar juga `sandbox`). Tidak ada URL publik.
+- **Akses**: Claims Officer (klaim yang ditugaskan) dan Supervisor (seluruh
+  klaim tim). Admin tidak memiliki izin dokumen. Klaim berstatus Ditutup
+  tidak menerima dokumen baru.
+- **Audit**: `document_uploaded` (jenis, mime, ukuran, halaman,
+  `duplicate_of`), `document_viewed` (mode preview/download, gagal audit →
+  file tidak dilayani), `document_duplicate_detected` (id dokumen yang
+  sudah ada). **Tanpa** isi file, nama file asli, path storage, atau
+  checksum. Nama asli (disanitasi) hanya disimpan di `claim_documents`
+  untuk ditampilkan ke petugas yang berhak.
+- **Data uji**: `sample-data/` berisi dokumen sintetis bertanda watermark
+  "CONTOH - DATA SINTETIS" untuk 5 skenario (lengkap, nama beda, polis beda,
+  gambar buram, kuitansi sebelum tanggal kejadian) plus `expected.json`.
+- Belum ada: hapus dokumen, drag-and-drop, malware scanning (catatan untuk
+  tahap *hardening*).
+
 ### Target Makefile
 
 | Target | Fungsi |
@@ -251,6 +301,7 @@ di-mask di log. Workflow tidak memakai secret repositori.
 | `DATABASE_URL` | Database development |
 | `TEST_DATABASE_URL` | Database test (harus berbeda dari `DATABASE_URL`) |
 | `DEMO_PASSWORD` | Password akun demo untuk `make seed` (≥ 12 karakter) |
+| `STORAGE_DIR` | Direktori private storage dokumen, default `storage/documents` (jangan di bawah `web/static`) |
 | `TRUST_PROXY` | `true` hanya bila di belakang reverse proxy tepercaya (IP klien dari entri paling kanan `X-Forwarded-For`) |
 
 ## Catatan keamanan & privasi
@@ -276,7 +327,8 @@ di-mask di log. Workflow tidak memakai secret repositori.
   (`authz.Require`). Akses ditolak → `403` dan tercatat `access_denied`.
 - **Audit log** (`audit_logs`, append-only via trigger): `login_succeeded`,
   `login_failed`, `logout`, `access_denied`, `user_seeded`, `claim_created`,
-  `claim_updated`, `status_changed`. Tidak menyimpan
+  `claim_updated`, `status_changed`, `document_uploaded`, `document_viewed`,
+  `document_duplicate_detected`. Tidak menyimpan
   password, email yang dicoba, maupun IP mentah; IP disimpan sebagai
   HMAC-SHA256 (`ip_hash`) untuk korelasi.
 - **Log aplikasi**: hanya method, path (tanpa query), status, durasi. Tanpa

@@ -20,7 +20,12 @@ type Config struct {
 	Secret []byte
 	// TrustProxy: jika true, IP klien diambil dari X-Forwarded-For.
 	TrustProxy bool
+	// StorageDir: direktori private storage dokumen (di luar web/static).
+	StorageDir string
 }
+
+// DefaultStorageDir dipakai bila STORAGE_DIR kosong.
+const DefaultStorageDir = "storage/documents"
 
 // IsProduction melaporkan apakah aplikasi berjalan di mode production.
 func (c Config) IsProduction() bool { return c.Env == "production" }
@@ -46,6 +51,11 @@ func Load(getenv func(string) string) (cfg Config, warnings []string, err error)
 	cfg.DatabaseURL = strings.TrimSpace(getenv("DATABASE_URL"))
 	if cfg.DatabaseURL == "" {
 		return Config{}, nil, errors.New("DATABASE_URL wajib diisi")
+	}
+
+	cfg.StorageDir = strings.TrimSpace(getenv("STORAGE_DIR"))
+	if cfg.StorageDir == "" {
+		cfg.StorageDir = DefaultStorageDir
 	}
 
 	cfg.TrustProxy = strings.EqualFold(strings.TrimSpace(getenv("TRUST_PROXY")), "true")

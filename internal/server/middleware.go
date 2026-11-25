@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -21,7 +22,12 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/audit"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/auth"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/authz"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 )
+
+func isMultipart(r *http.Request) bool {
+	return strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data")
+}
 
 type ctxKey int
 
@@ -32,6 +38,17 @@ const (
 
 // maxFormBytes membatasi ukuran body form (bukan upload).
 const maxFormBytes = 64 << 10
+
+// maxUploadBytes membatasi body multipart unggah dokumen: MaxFiles × MaxFileSize
+// ditambah ruang untuk field form dan header multipart.
+const maxUploadBytes = documents.MaxFiles*documents.MaxFileSize + 1<<20
+
+// uploadMemory: bagian multipart di atas ukuran ini ditulis ke file sementara
+// (dihapus otomatis oleh net/http setelah request selesai).
+const uploadMemory = 1 << 20
+
+// uploadPathRe: satu-satunya route yang menerima body multipart besar.
+var uploadPathRe = regexp.MustCompile(`^/claims/[0-9]+/documents$`)
 
 // contentSecurityPolicy tanpa 'unsafe-inline' dan tanpa sumber eksternal.
 const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self'; " +
@@ -108,7 +125,26 @@ func (s *Server) csrf(next http.Handler) http.Handler {
 		switch r.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
 		default:
-			r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
+			limit := int64(maxFormBytes)
+			// Batas besar hanya untuk route unggah dan session yang sudah login,
+			// agar klien anonim tidak bisa mengirim body besar.
+			if isMultipart(r) && uploadPathRe.MatchString(r.URL.Path) && s.sm.GetInt64(ctx, sessUserID) != 0 {
+				limit = maxUploadBytes
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, limit)
+			if isMultipart(r) {
+				if err := r.ParseMultipartForm(uploadMemory); err != nil {
+					var mbe *http.MaxBytesError
+					if errors.As(err, &mbe) {
+						s.renderError(w, r, http.StatusRequestEntityTooLarge, "Unggahan terlalu besar",
+							fmt.Sprintf("Total unggahan melebihi batas. Maksimal %d file, masing-masing %d MB.",
+								documents.MaxFiles, documents.MaxFileSize>>20))
+						return
+					}
+					s.renderError(w, r, http.StatusBadRequest, "Permintaan tidak valid", "Data formulir tidak dapat dibaca.")
+					return
+				}
+			}
 			sent := r.Header.Get("X-CSRF-Token")
 			if sent == "" {
 				sent = r.PostFormValue("csrf_token")

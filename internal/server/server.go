@@ -18,6 +18,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/authz"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/config"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/web"
 )
 
@@ -37,7 +38,9 @@ type Options struct {
 	Limiter *auth.RateLimiter
 	// Claims opsional; bila nil dibuat dari Pool.
 	Claims *claims.Service
-	Logger *slog.Logger
+	// Documents opsional; bila nil dibuat dari Pool dan Config.StorageDir.
+	Documents *documents.Service
+	Logger    *slog.Logger
 	// SessionCleanupInterval: interval pembersihan session kedaluwarsa.
 	// 0 menonaktifkan goroutine pembersih (berguna untuk test).
 	SessionCleanupInterval time.Duration
@@ -50,6 +53,7 @@ type Server struct {
 	audit   *audit.Logger
 	limiter *auth.RateLimiter
 	claims  *claims.Service
+	docs    *documents.Service
 	log     *slog.Logger
 	sm      *scs.SessionManager
 	store   *pgxstore.PostgresStore
@@ -67,6 +71,17 @@ func New(o Options) (*Server, error) {
 	}
 	if o.Claims == nil {
 		o.Claims = claims.NewService(o.Pool, o.Logger)
+	}
+	if o.Documents == nil {
+		dir := o.Config.StorageDir
+		if dir == "" {
+			dir = config.DefaultStorageDir
+		}
+		st, err := documents.NewStorage(dir)
+		if err != nil {
+			return nil, err
+		}
+		o.Documents = documents.NewService(o.Pool, st, o.Logger)
 	}
 	tmpl, err := parseTemplates(web.Templates())
 	if err != nil {
@@ -90,6 +105,7 @@ func New(o Options) (*Server, error) {
 		audit:   o.Audit,
 		limiter: o.Limiter,
 		claims:  o.Claims,
+		docs:    o.Documents,
 		log:     o.Logger,
 		sm:      sm,
 		store:   store,

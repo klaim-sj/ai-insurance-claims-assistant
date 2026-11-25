@@ -37,12 +37,13 @@ var testUsers = map[authz.Role]struct{ name, email string }{
 var lightParams = auth.Params{Memory: 1024, Iterations: 1, Parallelism: 1}
 
 type testEnv struct {
-	t     *testing.T
-	srv   *Server
-	ts    *httptest.Server
-	pool  *pgxpool.Pool
-	q     *db.Queries
-	users map[authz.Role]db.User
+	t          *testing.T
+	storageDir string
+	srv        *Server
+	ts         *httptest.Server
+	pool       *pgxpool.Pool
+	q          *db.Queries
+	users      map[authz.Role]db.User
 }
 
 type envOption func(*config.Config, *auth.RateLimiter)
@@ -68,7 +69,11 @@ func newEnv(t *testing.T, limiter *auth.RateLimiter, opts ...envOption) *testEnv
 		users[role] = row
 	}
 
-	cfg := config.Config{Env: "test", Secret: []byte(strings.Repeat("k", config.MinSecretLength))}
+	cfg := config.Config{
+		Env: "test", Secret: []byte(strings.Repeat("k", config.MinSecretLength)),
+		// Private storage sementara per test (dihapus otomatis).
+		StorageDir: t.TempDir(),
+	}
 	if limiter == nil {
 		limiter = auth.NewRateLimiter(time.Millisecond, 1000)
 	}
@@ -93,7 +98,7 @@ func newEnv(t *testing.T, limiter *auth.RateLimiter, opts ...envOption) *testEnv
 		ts.Close()
 		srv.Close()
 	})
-	return &testEnv{t: t, srv: srv, ts: ts, pool: pool, q: q, users: users}
+	return &testEnv{t: t, storageDir: cfg.StorageDir, srv: srv, ts: ts, pool: pool, q: q, users: users}
 }
 
 func (e *testEnv) client() *http.Client {

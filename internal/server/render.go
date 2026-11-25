@@ -11,6 +11,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/auth"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/authz"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 )
 
 // pageData adalah data untuk seluruh template.
@@ -58,6 +59,18 @@ var templateFuncs = template.FuncMap{
 	},
 	"isoDate":        func(t time.Time) string { return t.In(claims.Location).Format(claims.DateLayout) },
 	"reasonRequired": claims.ReasonRequired,
+	"docTypeLabel":   func(t documents.Type) string { return t.Label() },
+	"docStatusLabel": documents.StatusLabel,
+	"filesize": func(n int64) string {
+		switch {
+		case n >= 1<<20:
+			return fmt.Sprintf("%.1f MB", float64(n)/(1<<20))
+		case n >= 1<<10:
+			return fmt.Sprintf("%.0f KB", float64(n)/(1<<10))
+		}
+		return fmt.Sprintf("%d B", n)
+	},
+	"inc": func(i int) int { return i + 1 },
 }
 
 func parseTemplates(fsys fs.FS) (*templates, error) {

@@ -16,6 +16,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/auth"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/authz"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 )
 
 const ctxClaimID ctxKey = 100
@@ -34,6 +35,7 @@ func (s *Server) claimRoutes(r chi.Router) {
 		r.With(s.requirePerm(authz.PermClaimsEdit)).Get("/edit", s.claimEdit)
 		r.With(s.requirePerm(authz.PermClaimsEdit)).Post("/", s.claimUpdate)
 		r.With(s.requirePerm(authz.PermClaimsTransition)).Post("/status", s.claimTransition)
+		s.documentRoutes(r)
 	})
 }
 
@@ -411,12 +413,30 @@ type claimDetailData struct {
 	CanEdit        bool
 	TransitionTo   string
 	TransitionNote string
+
+	// Dokumen (Tahap 3).
+	Documents     []documents.Document
+	CanUpload     bool
+	DocTypes      []documents.Type
+	Upload        uploadState
+	MaxFiles      int
+	MaxFileSizeMB int
+}
+
+type detailOpts struct {
+	Error, To, Note string
+	Upload          *uploadState
 }
 
 func (s *Server) renderDetail(w http.ResponseWriter, r *http.Request, status int, errMsg, to, note string) {
+	s.renderDetailWith(w, r, status, detailOpts{Error: errMsg, To: to, Note: note})
+}
+
+func (s *Server) renderDetailWith(w http.ResponseWriter, r *http.Request, status int, o detailOpts) {
 	ctx := r.Context()
 	u := userFrom(ctx)
-	det, err := s.claims.Get(ctx, actorOf(u), claimIDFrom(ctx))
+	a := actorOf(u)
+	det, err := s.claims.Get(ctx, a, claimIDFrom(ctx))
 	if err != nil {
 		s.claimServiceError(w, r, err)
 		return
@@ -424,11 +444,24 @@ func (s *Server) renderDetail(w http.ResponseWriter, r *http.Request, status int
 	data := claimDetailData{
 		D:              det,
 		CanEdit:        authz.Can(u.Role, authz.PermClaimsEdit) && det.Status != claims.StatusClosed,
-		TransitionTo:   to,
-		TransitionNote: note,
+		TransitionTo:   o.To,
+		TransitionNote: o.Note,
+		CanUpload:      authz.Can(u.Role, authz.PermDocumentsUpload) && det.Status != claims.StatusClosed,
+		DocTypes:       documents.Types(),
+		MaxFiles:       documents.MaxFiles,
+		MaxFileSizeMB:  documents.MaxFileSize >> 20,
+	}
+	if o.Upload != nil {
+		data.Upload = *o.Upload
+	}
+	if authz.Can(u.Role, authz.PermDocumentsView) {
+		if data.Documents, err = s.docs.List(ctx, a, det.Claim.ID); err != nil {
+			s.claimServiceError(w, r, err)
+			return
+		}
 	}
 	s.render(w, r, status, "claim_detail", pageData{
-		Title: det.Claim.ClaimNumber, Active: "/claims", Error: errMsg, Data: data,
+		Title: det.Claim.ClaimNumber, Active: "/claims", Error: o.Error, Data: data,
 	})
 }
 

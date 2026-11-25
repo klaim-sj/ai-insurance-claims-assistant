@@ -51,23 +51,29 @@ const (
 	PermClaimsViewAll Permission = "claims.view_all"
 	// PermClaimsReassign: mengubah petugas yang ditugaskan pada klaim.
 	PermClaimsReassign Permission = "claims.reassign"
-	PermReportsView    Permission = "reports.view"
-	PermUsersManage    Permission = "users.manage"
+	// PermDocumentsView: pratinjau/unduh dokumen klaim yang boleh diakses.
+	PermDocumentsView Permission = "documents.view"
+	// PermDocumentsUpload: mengunggah dokumen ke klaim yang boleh diakses.
+	PermDocumentsUpload Permission = "documents.upload"
+	PermReportsView     Permission = "reports.view"
+	PermUsersManage     Permission = "users.manage"
 )
 
 // ErrForbidden dikembalikan bila peran tidak memiliki izin.
 var ErrForbidden = errors.New("akses tidak diizinkan")
 
-// Admin sengaja tidak memiliki izin klaim apa pun (tidak mengakses data klaim).
+// Admin sengaja tidak memiliki izin klaim/dokumen apa pun (tidak mengakses data klaim).
 var matrix = map[Role]map[Permission]bool{
 	RoleClaimsOfficer: {
 		PermDashboardView: true, PermClaimsView: true, PermClaimsCreate: true,
 		PermClaimsEdit: true, PermClaimsTransition: true,
+		PermDocumentsView: true, PermDocumentsUpload: true,
 	},
 	RoleSupervisor: {
 		PermDashboardView: true, PermClaimsView: true, PermClaimsCreate: true,
 		PermClaimsEdit: true, PermClaimsTransition: true, PermClaimsViewAll: true,
 		PermClaimsReassign: true, PermReportsView: true,
+		PermDocumentsView: true, PermDocumentsUpload: true,
 	},
 	RoleAdmin: {PermDashboardView: true, PermReportsView: true, PermUsersManage: true},
 }

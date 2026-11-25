@@ -83,9 +83,10 @@ func run(logger *slog.Logger) error {
 		Addr:              cfg.Addr,
 		Handler:           srv.Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      30 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		// Unggah dokumen hingga ±51 MB membutuhkan waktu baca lebih panjang.
+		ReadTimeout:  2 * time.Minute,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	errCh := make(chan error, 1)
