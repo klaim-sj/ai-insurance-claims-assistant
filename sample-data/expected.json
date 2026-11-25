@@ -1,0 +1,281 @@
+{
+  "_disclaimer": "SELURUH DATA SINTETIS/FIKTIF. Tidak ada data pribadi nyata. Temuan bersifat 'perlu ditinjau', bukan keputusan klaim.",
+  "_generator": "scripts/gen_sample_data.py",
+  "claim": {
+    "policy_number": "POL-DEMO-0101",
+    "claimant_name": "Rani Kusuma Dewi",
+    "product_type": "Kesehatan (simulasi)",
+    "received_at": "2026-10-15"
+  },
+  "date_format_in_documents": "DD-MM-YYYY (field di file ini dinormalisasi ke YYYY-MM-DD)",
+  "files": {
+    "01_formulir_klaim.pdf": {
+      "document_type": "formulir_klaim",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Rani Kusuma Dewi",
+        "nik": "0000010101900001",
+        "policy_number": "POL-DEMO-0101",
+        "phone": "0800-0000-1234",
+        "email": "rani.kusuma@example.com",
+        "claim_type": "rawat_inap",
+        "incident_date": "2026-10-10",
+        "discharge_date": "2026-10-12",
+        "provider_name": "RS Contoh Sehat (fiktif)",
+        "total_amount": 2750000
+      }
+    },
+    "02_identitas.png": {
+      "document_type": "identitas",
+      "mime_type": "image/png",
+      "pages": 1,
+      "fields": {
+        "full_name": "Rani Kusuma Dewi",
+        "nik": "0000010101900001",
+        "birth_place_date": "Kota Demo, 01-01-1990",
+        "address": "Jl. Contoh Fiktif No. 1, Kota Demo"
+      }
+    },
+    "03_surat_keterangan_medis.pdf": {
+      "document_type": "surat_keterangan_medis",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "patient_name": "Rani Kusuma Dewi",
+        "provider_name": "RS Contoh Sehat (fiktif)",
+        "admission_date": "2026-10-10",
+        "discharge_date": "2026-10-12",
+        "diagnosis": "Demam tanpa komplikasi (diagnosis contoh generik)",
+        "doctor_name": "dr. Contoh Pemeriksa (fiktif)"
+      }
+    },
+    "04_kuitansi.pdf": {
+      "document_type": "kuitansi",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "receipt_number": "KW-DEMO-0001",
+        "receipt_date": "2026-10-12",
+        "payer_name": "Rani Kusuma Dewi",
+        "provider_name": "RS Contoh Sehat (fiktif)",
+        "total_amount": 2750000
+      }
+    },
+    "b_formulir_klaim_nama_beda.pdf": {
+      "document_type": "formulir_klaim",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Rani Kusumawati",
+        "nik": "0000010101900001",
+        "policy_number": "POL-DEMO-0101",
+        "phone": "0800-0000-1234",
+        "email": "rani.kusuma@example.com",
+        "claim_type": "rawat_inap",
+        "incident_date": "2026-10-10",
+        "discharge_date": "2026-10-12",
+        "provider_name": "RS Contoh Sehat (fiktif)",
+        "total_amount": 2750000
+      }
+    },
+    "c_formulir_klaim_polis_beda.pdf": {
+      "document_type": "formulir_klaim",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Rani Kusuma Dewi",
+        "nik": "0000010101900001",
+        "policy_number": "POL-DEMO-0110",
+        "phone": "0800-0000-1234",
+        "email": "rani.kusuma@example.com",
+        "claim_type": "rawat_inap",
+        "incident_date": "2026-10-10",
+        "discharge_date": "2026-10-12",
+        "provider_name": "RS Contoh Sehat (fiktif)",
+        "total_amount": 2750000
+      }
+    },
+    "d_identitas_buram.png": {
+      "document_type": "identitas",
+      "mime_type": "image/png",
+      "pages": 1,
+      "fields": {
+        "full_name": "Rani Kusuma Dewi",
+        "nik": "0000010101900001",
+        "birth_place_date": "Kota Demo, 01-01-1990",
+        "address": "Jl. Contoh Fiktif No. 1, Kota Demo"
+      },
+      "note": "Nilai field adalah isi sebenarnya sebelum diburamkan. Sistem TIDAK boleh menebak; field diharapkan tidak terbaca atau confidence rendah."
+    },
+    "e_kuitansi_tanggal_sebelum_kejadian.pdf": {
+      "document_type": "kuitansi",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "receipt_number": "KW-DEMO-0001",
+        "receipt_date": "2026-10-05",
+        "payer_name": "Rani Kusuma Dewi",
+        "provider_name": "RS Contoh Sehat (fiktif)",
+        "total_amount": 2750000
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "a",
+      "title": "Set lengkap dan konsisten",
+      "upload": [
+        "01_formulir_klaim.pdf",
+        "02_identitas.png",
+        "03_surat_keterangan_medis.pdf",
+        "04_kuitansi.pdf"
+      ],
+      "expected_findings": [],
+      "suggested_followup": [
+        "Tidak ada temuan otomatis; petugas tetap meninjau dokumen sebelum melanjutkan."
+      ]
+    },
+    {
+      "id": "b",
+      "title": "Nama di formulir berbeda dengan identitas",
+      "upload": [
+        "b_formulir_klaim_nama_beda.pdf",
+        "02_identitas.png",
+        "03_surat_keterangan_medis.pdf",
+        "04_kuitansi.pdf"
+      ],
+      "expected_findings": [
+        {
+          "code": "CROSS_DOC_NAME_MISMATCH",
+          "category": "konsistensi_antardokumen",
+          "status": "perlu_ditinjau",
+          "description": "Nama pada formulir klaim berbeda dari nama pada dokumen identitas.",
+          "evidence": [
+            {
+              "file": "b_formulir_klaim_nama_beda.pdf",
+              "page": 1,
+              "field": "claimant_name",
+              "value": "Rani Kusumawati"
+            },
+            {
+              "file": "02_identitas.png",
+              "page": 1,
+              "field": "full_name",
+              "value": "Rani Kusuma Dewi"
+            }
+          ]
+        }
+      ],
+      "suggested_followup": [
+        "Konfirmasi ejaan nama peserta; minta formulir yang sudah diperbaiki bila diperlukan."
+      ]
+    },
+    {
+      "id": "c",
+      "title": "Nomor polis di formulir berbeda dengan data klaim",
+      "upload": [
+        "c_formulir_klaim_polis_beda.pdf",
+        "02_identitas.png",
+        "03_surat_keterangan_medis.pdf",
+        "04_kuitansi.pdf"
+      ],
+      "expected_findings": [
+        {
+          "code": "POLICY_NUMBER_MISMATCH",
+          "category": "konsistensi_data_klaim",
+          "status": "perlu_ditinjau",
+          "description": "Nomor polis pada formulir klaim berbeda dari nomor polis pada data klaim.",
+          "evidence": [
+            {
+              "file": "c_formulir_klaim_polis_beda.pdf",
+              "page": 1,
+              "field": "policy_number",
+              "value": "POL-DEMO-0110"
+            },
+            {
+              "source": "claim_record",
+              "field": "policy_number",
+              "value": "POL-DEMO-0101"
+            }
+          ]
+        }
+      ],
+      "suggested_followup": [
+        "Verifikasi nomor polis pada sistem polis; perbaiki data klaim atau minta formulir yang benar."
+      ]
+    },
+    {
+      "id": "d",
+      "title": "Gambar identitas sengaja buram",
+      "upload": [
+        "01_formulir_klaim.pdf",
+        "d_identitas_buram.png",
+        "03_surat_keterangan_medis.pdf",
+        "04_kuitansi.pdf"
+      ],
+      "expected_findings": [
+        {
+          "code": "DOCUMENT_UNREADABLE",
+          "category": "kualitas_dokumen",
+          "status": "perlu_ditinjau",
+          "description": "Dokumen identitas buram sehingga field tidak dapat dibaca dengan andal.",
+          "evidence": [
+            {
+              "file": "d_identitas_buram.png",
+              "page": 1,
+              "field": null,
+              "value": null,
+              "signal": "confidence OCR rendah / teks tidak terbaca"
+            }
+          ]
+        }
+      ],
+      "expected_behavior": "Jangan menebak nama/NIK dari gambar buram; perbandingan nama formulir vs identitas ditandai tidak dapat dilakukan, bukan dianggap cocok.",
+      "suggested_followup": [
+        "Minta unggah ulang dokumen identitas yang lebih jelas."
+      ]
+    },
+    {
+      "id": "e",
+      "title": "Tanggal kuitansi sebelum tanggal kejadian",
+      "upload": [
+        "01_formulir_klaim.pdf",
+        "02_identitas.png",
+        "03_surat_keterangan_medis.pdf",
+        "e_kuitansi_tanggal_sebelum_kejadian.pdf"
+      ],
+      "expected_findings": [
+        {
+          "code": "RECEIPT_DATE_BEFORE_INCIDENT",
+          "category": "konsistensi_tanggal",
+          "status": "perlu_ditinjau",
+          "description": "Tanggal kuitansi lebih awal dari tanggal kejadian/masuk perawatan.",
+          "evidence": [
+            {
+              "file": "e_kuitansi_tanggal_sebelum_kejadian.pdf",
+              "page": 1,
+              "field": "receipt_date",
+              "value": "2026-10-05"
+            },
+            {
+              "file": "01_formulir_klaim.pdf",
+              "page": 1,
+              "field": "incident_date",
+              "value": "2026-10-10"
+            },
+            {
+              "file": "03_surat_keterangan_medis.pdf",
+              "page": 1,
+              "field": "admission_date",
+              "value": "2026-10-10"
+            }
+          ]
+        }
+      ],
+      "suggested_followup": [
+        "Konfirmasi tanggal kuitansi ke fasilitas kesehatan; minta kuitansi yang sesuai bila salah ketik."
+      ]
+    }
+  ]
+}

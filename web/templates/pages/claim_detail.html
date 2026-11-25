@@ -25,6 +25,104 @@
       </dl>
     </section>
 
+    <section id="documents" aria-labelledby="documents-heading" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 id="documents-heading" class="text-base font-semibold">Dokumen</h2>
+      <p class="mt-1 text-xs text-slate-500">Dokumen disimpan privat dan hanya dapat dibuka oleh petugas yang berhak atas klaim ini. Setiap akses dicatat.</p>
+      {{if $.Data.Documents}}
+      <div class="mt-4 overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead>
+            <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+              <th scope="col" class="py-2 pr-4">Jenis</th>
+              <th scope="col" class="py-2 pr-4">File</th>
+              <th scope="col" class="py-2 pr-4">Ukuran</th>
+              <th scope="col" class="py-2 pr-4">Status</th>
+              <th scope="col" class="py-2 pr-4">Diunggah</th>
+              <th scope="col" class="py-2"><span class="sr-only">Aksi</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {{range $.Data.Documents}}
+            <tr>
+              <td class="py-2 pr-4 font-medium">{{docTypeLabel .Type}}</td>
+              <td class="max-w-xs py-2 pr-4">
+                <span class="block truncate" title="{{.OriginalName}}">{{.OriginalName}}</span>
+                <span class="text-xs text-slate-500">{{if eq .MIME "application/pdf"}}PDF · {{.Pages}} halaman{{else if eq .MIME "image/png"}}PNG{{else}}JPG{{end}}{{if .DuplicateOf}} · duplikat dok. #{{.DuplicateOf}}{{end}}</span>
+              </td>
+              <td class="whitespace-nowrap py-2 pr-4">{{filesize .Size}}</td>
+              <td class="py-2 pr-4"><span class="whitespace-nowrap rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700" {{if eq .Status "uploaded"}}title="Siap untuk OCR (tahap berikutnya)"{{end}}>{{docStatusLabel .Status}}</span></td>
+              <td class="py-2 pr-4 text-xs text-slate-500">{{datetime .CreatedAt}}{{if .UploaderName}}<br>{{.UploaderName}}{{end}}</td>
+              <td class="whitespace-nowrap py-2 text-right">
+                <a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}" target="_blank" rel="noopener noreferrer" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Pratinjau<span class="sr-only"> dokumen #{{.ID}}</span></a>
+                · <a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}?download=1" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Unduh<span class="sr-only"> dokumen #{{.ID}}</span></a>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      {{else}}
+      <p class="mt-4 text-sm text-slate-600">Belum ada dokumen.</p>
+      {{end}}
+
+      {{if $.Data.CanUpload}}
+      <form id="upload-form" method="post" action="/claims/{{.Claim.ID}}/documents" enctype="multipart/form-data"
+            hx-post="/claims/{{.Claim.ID}}/documents" hx-encoding="multipart/form-data"
+            hx-target="#upload-result" hx-select="#upload-result" hx-swap="outerHTML"
+            class="mt-6 space-y-4 border-t border-slate-200 pt-6">
+        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+        <h3 class="text-sm font-semibold">Unggah dokumen</h3>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="document_type" class="block text-sm font-medium text-slate-700">Jenis dokumen</label>
+            <select id="document_type" name="document_type" required
+                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              <option value="">— Pilih —</option>
+              {{range $.Data.DocTypes}}<option value="{{.}}" {{if eq (print .) $.Data.Upload.Type}}selected{{end}}>{{.Label}}</option>{{end}}
+            </select>
+          </div>
+          <div>
+            <label for="files" class="block text-sm font-medium text-slate-700">File</label>
+            <input id="files" name="files" type="file" multiple required accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                   aria-describedby="files-help"
+                   class="mt-1 block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-slate-200">
+            <p id="files-help" class="mt-1 text-xs text-slate-500">PDF, JPG, atau PNG. Maksimal {{$.Data.MaxFiles}} file, masing-masing {{$.Data.MaxFileSizeMB}} MB. PDF tidak boleh terenkripsi.</p>
+          </div>
+        </div>
+
+        <div id="upload-result" aria-live="polite">
+          {{with $.Data.Upload}}
+          {{if .FormError}}
+          <div role="alert" class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            <p class="font-medium">{{.FormError}}</p>
+            {{if .FileErrors}}
+            <ul class="mt-2 list-disc space-y-1 pl-5">
+              {{range .FileErrors}}<li><span class="font-medium">{{.Name}}</span>: {{.Err}}</li>{{end}}
+            </ul>
+            {{end}}
+          </div>
+          {{end}}
+          {{if .Duplicates}}
+          <div role="alert" class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p class="font-medium">File berikut identik dengan dokumen yang sudah ada. Belum ada file yang disimpan.</p>
+            <ul class="mt-2 list-disc space-y-1 pl-5">
+              {{range .Duplicates}}<li><span class="font-medium">{{.Name}}</span>: {{if .ExistingID}}sama dengan dokumen #{{.ExistingID}} ({{docTypeLabel .ExistingType}}){{else}}terpilih lebih dari sekali dalam unggahan ini{{end}}</li>{{end}}
+            </ul>
+            <label class="mt-3 flex items-start gap-2">
+              <input type="checkbox" name="confirm_duplicate" value="1" class="mt-0.5 focus:ring-indigo-500">
+              <span>Saya sudah memeriksa dan tetap ingin menyimpan file duplikat ini.</span>
+            </label>
+            <p class="mt-1 text-xs">Tanpa JavaScript, pilih ulang file sebelum mengirim.</p>
+          </div>
+          {{end}}
+          {{end}}
+        </div>
+
+        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2">Unggah</button>
+      </form>
+      {{end}}
+    </section>
+
     {{if .NextStatuses}}
     <section aria-labelledby="transition-heading" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
       <h2 id="transition-heading" class="text-base font-semibold">Ubah status administrasi</h2>

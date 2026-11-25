@@ -10,6 +10,30 @@
     }
   });
 
+  // Respons 409 (duplikat) dan 422 (validasi) berisi pesan untuk pengguna;
+  // tampilkan alih-alih diabaikan sebagai error.
+  document.addEventListener("htmx:beforeSwap", function (evt) {
+    var st = evt.detail.xhr.status;
+    if (st === 409 || st === 422) {
+      evt.detail.shouldSwap = true;
+      evt.detail.isError = false;
+    }
+  });
+
+  // Error lain saat unggah (mis. 413 total terlalu besar): tampilkan pesan
+  // singkat di area hasil unggah.
+  document.addEventListener("htmx:responseError", function (evt) {
+    var box = document.getElementById("upload-result");
+    if (!box || evt.detail.elt.id !== "upload-form") return;
+    var p = document.createElement("p");
+    p.setAttribute("role", "alert");
+    p.className = "rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800";
+    p.textContent = evt.detail.xhr.status === 413
+      ? "Total unggahan melebihi batas. Kurangi jumlah atau ukuran file."
+      : "Unggahan gagal. Muat ulang halaman lalu coba lagi.";
+    box.replaceChildren(p);
+  });
+
   // Toggle menu navigasi pada layar kecil (dapat dipakai dengan keyboard).
   document.addEventListener("DOMContentLoaded", function () {
     var btn = document.querySelector("[data-menu-toggle]");

@@ -22,6 +22,10 @@ const (
 	ActionClaimCreated   = "claim_created"
 	ActionClaimUpdated   = "claim_updated"
 	ActionStatusChanged  = "status_changed"
+
+	ActionDocumentUploaded          = "document_uploaded"
+	ActionDocumentViewed            = "document_viewed"
+	ActionDocumentDuplicateDetected = "document_duplicate_detected"
 )
 
 // Jenis entitas.
@@ -29,6 +33,8 @@ const (
 	EntityUser  = "user"
 	EntityRoute = "route"
 	EntityClaim = "claim"
+	// EntityDocument: entity_id adalah claim_documents.id.
+	EntityDocument = "claim_document"
 )
 
 // Entry adalah satu catatan audit.

@@ -69,7 +69,8 @@ func TestMenuFor(t *testing.T) {
 
 func TestClaimPermissions(t *testing.T) {
 	claimPerms := []Permission{PermClaimsView, PermClaimsCreate, PermClaimsEdit,
-		PermClaimsTransition, PermClaimsViewAll, PermClaimsReassign}
+		PermClaimsTransition, PermClaimsViewAll, PermClaimsReassign,
+		PermDocumentsView, PermDocumentsUpload}
 	for _, p := range claimPerms {
 		if Can(RoleAdmin, p) {
 			t.Errorf("admin tidak boleh punya izin klaim %q", p)
@@ -77,6 +78,9 @@ func TestClaimPermissions(t *testing.T) {
 		if !Can(RoleSupervisor, p) {
 			t.Errorf("supervisor harus punya izin %q", p)
 		}
+	}
+	if !Can(RoleClaimsOfficer, PermDocumentsView) || !Can(RoleClaimsOfficer, PermDocumentsUpload) {
+		t.Fatal("officer harus bisa melihat dan mengunggah dokumen klaimnya")
 	}
 	if Can(RoleClaimsOfficer, PermClaimsViewAll) || Can(RoleClaimsOfficer, PermClaimsReassign) {
 		t.Fatal("officer tidak boleh melihat semua klaim atau reassign")

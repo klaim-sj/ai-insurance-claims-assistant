@@ -44,6 +44,9 @@ type ClaimDocument struct {
 	ProcessingStatus string
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+	UploadedBy       *int64
+	PageCount        *int32
+	DuplicateOf      *int64
 }
 
 type ClaimNumberCounter struct {
