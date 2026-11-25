@@ -1,0 +1,50 @@
+{
+  "name": "AI Insurance Claims Assistant",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+
+  // Nilai non-rahasia untuk development. Kredensial DB hanya berlaku di dalam
+  // codespace (lihat docker-compose.yml). DEMO_PASSWORD dan APP_SECRET TIDAK
+  // disimpan di sini: isi lewat Codespaces secrets (lihat README).
+  "remoteEnv": {
+    "APP_ENV": "development",
+    "APP_ADDR": ":8080",
+    "TRUST_PROXY": "false",
+    "DATABASE_URL": "postgres://claims:claims_devcontainer_only@localhost:5432/claims_dev?sslmode=disable",
+    "TEST_DATABASE_URL": "postgres://claims:claims_devcontainer_only@localhost:5432/claims_test?sslmode=disable",
+    "PGHOST": "localhost",
+    "PGPORT": "5432",
+    "PGUSER": "claims",
+    "GOTOOLCHAIN": "local"
+  },
+
+  // Secret yang direkomendasikan; Codespaces meminta nilainya saat membuat
+  // codespace dan menyuntikkannya sebagai environment variable.
+  "secrets": {
+    "DEMO_PASSWORD": {
+      "description": "Password akun demo untuk `make seed` (minimal 12 karakter). Jangan pakai password yang Anda gunakan di tempat lain."
+    },
+    "APP_SECRET": {
+      "description": "Kunci HMAC aplikasi, minimal 32 karakter (contoh: openssl rand -base64 48). Opsional di development; bila kosong dipakai nilai acak sementara."
+    }
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Claims Assistant",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["golang.go"]
+    }
+  }
+}

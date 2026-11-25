@@ -1,0 +1,38 @@
+# Dipakai oleh .devcontainer/devcontainer.json (GitHub Codespaces / Dev Containers).
+# Kredensial database di bawah HANYA untuk lingkungan pengembangan ini: port
+# PostgreSQL tidak dipublikasikan, hanya bisa diakses dari container `app`.
+# Jangan dipakai di production.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    # Berbagi network dengan `db`: PostgreSQL tersedia di localhost:5432 dan
+    # port 8080 aplikasi di-forward oleh Codespaces dari sini.
+    network_mode: service:db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: claims
+      POSTGRES_PASSWORD: claims_devcontainer_only
+      POSTGRES_DB: claims_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Membuat database claims_test (hanya saat volume pertama kali dibuat).
+      - ../scripts/docker-init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claims -d claims_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:
