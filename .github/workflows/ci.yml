@@ -87,3 +87,25 @@ jobs:
 
       - name: go test -race
         run: go test -race -count=1 ./...
+
+  devcontainer:
+    name: build devcontainer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Menangkap kegagalan build image Codespaces (mis. sumber apt pihak
+      # ketiga di base image yang kuncinya kedaluwarsa) sebelum dicoba di
+      # Codespaces. --pull memastikan base image terbaru ikut diuji.
+      - name: docker build .devcontainer/Dockerfile
+        run: docker build --pull -t devcontainer-ci -f .devcontainer/Dockerfile .devcontainer
+
+      - name: Cek alat di image
+        run: docker run --rm devcontainer-ci bash -c 'pg_isready --version && go version'
+
+      - name: Validasi docker-compose devcontainer
+        run: docker compose -f .devcontainer/docker-compose.yml config --quiet
