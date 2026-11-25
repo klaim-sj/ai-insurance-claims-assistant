@@ -19,12 +19,16 @@ const (
 	ActionLogout         = "logout"
 	ActionAccessDenied   = "access_denied"
 	ActionUserSeeded     = "user_seeded"
+	ActionClaimCreated   = "claim_created"
+	ActionClaimUpdated   = "claim_updated"
+	ActionStatusChanged  = "status_changed"
 )
 
 // Jenis entitas.
 const (
 	EntityUser  = "user"
 	EntityRoute = "route"
+	EntityClaim = "claim"
 )
 
 // Entry adalah satu catatan audit.

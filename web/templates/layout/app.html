@@ -36,6 +36,12 @@
   </header>
 
   <main id="main" tabindex="-1" class="mx-auto max-w-7xl px-4 py-8 focus:outline-none sm:px-6 lg:px-8">
+    {{if .Flash}}
+    <div role="status" class="mb-6 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{{.Flash}}</div>
+    {{end}}
+    {{if .Error}}
+    <div role="alert" class="mb-6 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">{{.Error}}</div>
+    {{end}}
     {{template "content" .}}
   </main>
 

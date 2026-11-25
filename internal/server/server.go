@@ -16,6 +16,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/audit"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/auth"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/authz"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/config"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/web"
 )
@@ -24,6 +25,7 @@ import (
 const (
 	sessUserID = "user_id"
 	sessCSRF   = "csrf_token"
+	sessFlash  = "flash"
 )
 
 // Options adalah dependensi Server.
@@ -33,7 +35,9 @@ type Options struct {
 	Auth    *auth.Service
 	Audit   *audit.Logger
 	Limiter *auth.RateLimiter
-	Logger  *slog.Logger
+	// Claims opsional; bila nil dibuat dari Pool.
+	Claims *claims.Service
+	Logger *slog.Logger
 	// SessionCleanupInterval: interval pembersihan session kedaluwarsa.
 	// 0 menonaktifkan goroutine pembersih (berguna untuk test).
 	SessionCleanupInterval time.Duration
@@ -45,6 +49,7 @@ type Server struct {
 	auth    *auth.Service
 	audit   *audit.Logger
 	limiter *auth.RateLimiter
+	claims  *claims.Service
 	log     *slog.Logger
 	sm      *scs.SessionManager
 	store   *pgxstore.PostgresStore
@@ -59,6 +64,9 @@ func New(o Options) (*Server, error) {
 	}
 	if o.Logger == nil {
 		o.Logger = slog.Default()
+	}
+	if o.Claims == nil {
+		o.Claims = claims.NewService(o.Pool, o.Logger)
 	}
 	tmpl, err := parseTemplates(web.Templates())
 	if err != nil {
@@ -81,6 +89,7 @@ func New(o Options) (*Server, error) {
 		auth:    o.Auth,
 		audit:   o.Audit,
 		limiter: o.Limiter,
+		claims:  o.Claims,
 		log:     o.Logger,
 		sm:      sm,
 		store:   store,
@@ -120,7 +129,7 @@ func (s *Server) routes() http.Handler {
 			r.Use(s.requireAuth)
 			r.Post("/logout", s.postLogout)
 			r.With(s.requirePerm(authz.PermDashboardView)).Get("/dashboard", s.dashboard)
-			r.With(s.requirePerm(authz.PermClaimsView)).Get("/claims", s.placeholder("Klaim", "/claims", authz.PermClaimsView))
+			r.Route("/claims", s.claimRoutes)
 			r.With(s.requirePerm(authz.PermReportsView)).Get("/reports", s.placeholder("Laporan", "/reports", authz.PermReportsView))
 			r.With(s.requirePerm(authz.PermUsersManage)).Get("/admin/users", s.placeholder("Pengguna", "/admin/users", authz.PermUsersManage))
 		})

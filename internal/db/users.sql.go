@@ -51,6 +51,37 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 	return i, err
 }
 
+const listActiveUsersByRole = `-- name: ListActiveUsersByRole :many
+SELECT id, name FROM users
+WHERE role = $1 AND is_active
+ORDER BY name, id
+`
+
+type ListActiveUsersByRoleRow struct {
+	ID   int64
+	Name string
+}
+
+func (q *Queries) ListActiveUsersByRole(ctx context.Context, role string) ([]ListActiveUsersByRoleRow, error) {
+	rows, err := q.db.Query(ctx, listActiveUsersByRole, role)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveUsersByRoleRow
+	for rows.Next() {
+		var i ListActiveUsersByRoleRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setUserActive = `-- name: SetUserActive :exec
 UPDATE users SET is_active = $2
 WHERE id = $1

@@ -22,8 +22,9 @@ Acuan desain: [`docs/blueprint.pdf`](docs/blueprint.pdf).
 | Tahap | Cakupan | Status |
 |---|---|---|
 | 1. Fondasi | Skema DB, login/logout, session, CSRF, rate limit, RBAC, audit log, layout | ✅ |
-| 2. Claim CRUD | Buat/cari/lihat/ubah status klaim | Berikutnya |
-| 3+ | Dokumen, OCR, validasi, AI summary, review, laporan | Direncanakan |
+| 2. Claim CRUD | Buat/cari/lihat/ubah klaim, transisi status, timeline, otorisasi per klaim | ✅ |
+| 3. Dokumen | Upload privat, metadata, preview, validasi file | Berikutnya |
+| 4+ | OCR, validasi, AI summary, review, laporan | Direncanakan |
 
 ## Stack
 
@@ -38,10 +39,11 @@ aplikasi berjalan **tanpa Node.js dan tanpa CDN**.
 
 ```
 cmd/server        aplikasi web
-cmd/seed          seed akun demo fiktif
+cmd/seed          seed akun demo & klaim demo fiktif
 internal/auth     argon2id, rate limiter, layanan login
 internal/authz    matriks role → izin → menu
 internal/audit    penulisan audit_logs
+internal/claims   layanan klaim: validasi, nomor otomatis, transisi status, daftar
 internal/config   konfigurasi dari environment
 internal/db       kode hasil sqlc (jangan diedit manual)
 internal/server   router, middleware (CSRF, RBAC, header keamanan), handler
@@ -112,7 +114,56 @@ menolak berjalan saat `APP_ENV=production`.
 | `supervisor@example.com` | Supervisor | Dashboard, Klaim, Laporan |
 | `admin@example.com` | Admin | Dashboard, Laporan, Pengguna |
 
-Halaman Klaim, Laporan, dan Pengguna masih placeholder (tahap berikutnya).
+Seed juga membuat tiga klaim fiktif (hanya bila tabel klaim masih kosong),
+seluruhnya ditugaskan ke `officer@example.com`, produk "Kesehatan (simulasi)":
+
+| Nomor | Nama fiktif | Polis | Status |
+|---|---|---|---|
+| CLM-DEMO-0001 | Budi Santoso | POL-DEMO-0001 | Perlu ditinjau |
+| CLM-DEMO-0002 | Siti Rahma | POL-DEMO-0002 | Sedang diproses |
+| CLM-DEMO-0003 | Andi Pratama | POL-DEMO-0003 | Perlu dokumen |
+
+Halaman Laporan dan Pengguna masih placeholder (tahap berikutnya).
+
+## Manajemen klaim (Tahap 2)
+
+- **Nomor klaim** `CLM-DEMO-0001` dibuat otomatis lewat tabel
+  `claim_number_counters` (`INSERT … ON CONFLICT DO UPDATE … RETURNING` di
+  dalam transaksi pembuatan klaim). Baris penghitung terkunci sampai commit,
+  jadi aman dari race condition dan tidak ada nomor terlewat saat rollback.
+- **Validasi server-side**: nama pemohon 2–100 huruf; nomor polis wajib
+  format simulasi `POL-DEMO-0000` (sengaja menolak format nomor polis
+  nyata); produk dari allowlist; tanggal diterima tidak di masa depan
+  (WIB); petugas harus Claims Officer aktif.
+- **Transisi status** hanya lewat satu fungsi service
+  (`claims.Service.transition`): kunci baris klaim, validasi peta transisi,
+  tulis `claim_status_histories` dan `audit_logs` dalam satu transaksi.
+
+  | Dari | Ke (pengguna) | Ke (hanya sistem) |
+  |---|---|---|
+  | Draft | Diajukan, Ditutup* | – |
+  | Diajukan | Perlu dokumen*, Sudah ditinjau | Sedang diproses |
+  | Sedang diproses | – | Perlu ditinjau, Diajukan (proses gagal) |
+  | Perlu ditinjau | Sudah ditinjau, Perlu dokumen* | – |
+  | Perlu dokumen | Diajukan, Ditutup* | – |
+  | Sudah ditinjau | Perlu dokumen*, Ditutup* | – |
+  | Ditutup | final | – |
+
+  \* alasan wajib. Status administrasi **bukan** keputusan manfaat atau
+  kelayakan klaim. `SystemTransition` disiapkan untuk pemrosesan dokumen
+  pada tahap berikutnya.
+- **Otorisasi per klaim** (middleware `requireClaimAccess` **dan** service):
+  Claims Officer hanya klaim yang ditugaskan kepadanya; Supervisor seluruh
+  klaim tim (demo: satu tim) dan dapat memindahkan penugasan; Admin tidak
+  mengakses data klaim. Penolakan → `403` dan tercatat `access_denied`
+  (entity `claim`).
+- **Daftar klaim**: cari awalan nomor klaim/polis (wildcard di-escape),
+  filter status, produk, rentang tanggal, petugas (Supervisor), 20 per
+  halaman. Seluruh query lewat sqlc (parameterized).
+- **Audit**: `claim_created`, `claim_updated` (before/after hanya field yang
+  berubah; nilai nama pemohon & nomor polis disamarkan `[DIUBAH]`),
+  `status_changed` (status lama/baru dan `history_id`; isi alasan tidak
+  disalin ke audit).
 
 ### Target Makefile
 
@@ -124,7 +175,7 @@ Halaman Klaim, Laporan, dan Pengguna masih placeholder (tahap berikutnya).
 | `make migrate-up` / `migrate-down` / `migrate-status` | Migration DB development |
 | `make migrate-test` | Migration manual DB test (test juga memigrasi otomatis) |
 | `make sqlc` | Generate ulang `internal/db` |
-| `make seed` | Seed akun demo |
+| `make seed` | Seed akun demo & klaim demo |
 | `make css` | Build ulang Tailwind (CLI standalone diunduh ke `tmp/bin`) |
 
 ### Environment variable
@@ -161,7 +212,8 @@ Halaman Klaim, Laporan, dan Pengguna masih placeholder (tahap berikutnya).
 - **RBAC**: diperiksa di middleware route **dan** di handler/service
   (`authz.Require`). Akses ditolak → `403` dan tercatat `access_denied`.
 - **Audit log** (`audit_logs`, append-only via trigger): `login_succeeded`,
-  `login_failed`, `logout`, `access_denied`, `user_seeded`. Tidak menyimpan
+  `login_failed`, `logout`, `access_denied`, `user_seeded`, `claim_created`,
+  `claim_updated`, `status_changed`. Tidak menyimpan
   password, email yang dicoba, maupun IP mentah; IP disimpan sebagai
   HMAC-SHA256 (`ip_hash`) untuk korelasi.
 - **Log aplikasi**: hanya method, path (tanpa query), status, durasi. Tanpa
@@ -194,3 +246,12 @@ nonaktif), CSRF, rate limit per IP, akses lintas peran (route & handler),
 redirect tanpa login, logout + replay cookie lama, audit log tercatat tanpa
 PII, header keamanan, migration up/down, constraint status klaim, seed
 idempoten.
+
+Cakupan Tahap 2: transisi valid/tidak valid (termasuk status khusus sistem
+dan klaim final), alasan wajib, TC-07 officer tidak bisa membuka/mengubah
+klaim officer lain (route, edit, update, transisi; tercatat
+`access_denied`), lapis service tetap menolak tanpa middleware, supervisor
+bisa, admin tidak, 20 pembuatan klaim bersamaan menghasilkan nomor unik dan
+berurutan, validasi form, audit hanya field berubah tanpa PII, filter
+(status, produk, tanggal, petugas, pencarian, input wildcard/injeksi) dan
+pagination, seed klaim idempoten.

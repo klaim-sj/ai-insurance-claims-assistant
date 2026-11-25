@@ -19,3 +19,8 @@ RETURNING *;
 -- name: SetUserActive :exec
 UPDATE users SET is_active = $2
 WHERE id = $1;
+
+-- name: ListActiveUsersByRole :many
+SELECT id, name FROM users
+WHERE role = $1 AND is_active
+ORDER BY name, id;

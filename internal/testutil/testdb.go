@@ -26,7 +26,10 @@ import (
 const lockKey = 7_420_251_125
 
 // Tabel aplikasi yang dikosongkan sebelum setiap test.
-var tables = []string{"audit_logs", "claim_documents", "claims", "sessions", "users"}
+var tables = []string{
+	"audit_logs", "claim_status_histories", "claim_number_counters",
+	"claim_documents", "claims", "sessions", "users",
+}
 
 var (
 	poolOnce sync.Once

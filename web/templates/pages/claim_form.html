@@ -1,0 +1,66 @@
+{{define "content"}}
+{{with .Data}}
+<nav aria-label="Breadcrumb" class="text-sm"><a href="/claims" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Klaim</a>{{if .ClaimNumber}} / {{.ClaimNumber}}{{end}}</nav>
+<h1 class="mt-2 text-2xl font-bold tracking-tight">{{.Heading}}{{if .ClaimNumber}} <span class="text-slate-500">{{.ClaimNumber}}</span>{{end}}</h1>
+{{if not .ClaimNumber}}<p class="mt-1 text-sm text-slate-600">Nomor klaim dibuat otomatis. Gunakan hanya data simulasi (fiktif).</p>{{end}}
+
+<form method="post" action="{{.Action}}" novalidate class="mt-6 max-w-2xl space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+  <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+
+  <div>
+    <label for="claimant_name" class="block text-sm font-medium text-slate-700">Nama pemohon (fiktif)</label>
+    <input id="claimant_name" name="claimant_name" type="text" required maxlength="100" autocomplete="off"
+           value="{{.Input.ClaimantName}}" {{with .Errors.claimant_name}}aria-invalid="true" aria-describedby="claimant_name-error"{{end}}
+           class="mt-1 block w-full rounded-md border {{if .Errors.claimant_name}}border-red-500{{else}}border-slate-300{{end}} px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+    {{with .Errors.claimant_name}}<p id="claimant_name-error" class="mt-1 text-sm text-red-700">{{.}}</p>{{end}}
+  </div>
+
+  <div>
+    <label for="policy_number" class="block text-sm font-medium text-slate-700">Nomor polis</label>
+    <input id="policy_number" name="policy_number" type="text" required maxlength="20" autocomplete="off" placeholder="POL-DEMO-0001"
+           value="{{.Input.PolicyNumber}}" {{with .Errors.policy_number}}aria-invalid="true" aria-describedby="policy_number-error"{{else}}aria-describedby="policy_number-help"{{end}}
+           class="mt-1 block w-full rounded-md border {{if .Errors.policy_number}}border-red-500{{else}}border-slate-300{{end}} px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+    {{with .Errors.policy_number}}<p id="policy_number-error" class="mt-1 text-sm text-red-700">{{.}}</p>{{else}}<p id="policy_number-help" class="mt-1 text-xs text-slate-500">Format simulasi: POL-DEMO-0000.</p>{{end}}
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div>
+      <label for="product_type" class="block text-sm font-medium text-slate-700">Jenis produk</label>
+      <select id="product_type" name="product_type" required {{with .Errors.product_type}}aria-invalid="true" aria-describedby="product_type-error"{{end}}
+              class="mt-1 block w-full rounded-md border {{if .Errors.product_type}}border-red-500{{else}}border-slate-300{{end}} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+        {{range .Products}}<option value="{{.}}" {{if eq . $.Data.Input.ProductType}}selected{{end}}>{{.}}</option>{{end}}
+      </select>
+      {{with .Errors.product_type}}<p id="product_type-error" class="mt-1 text-sm text-red-700">{{.}}</p>{{end}}
+    </div>
+    <div>
+      <label for="received_at" class="block text-sm font-medium text-slate-700">Tanggal diterima</label>
+      <input id="received_at" name="received_at" type="date" required max="{{.MaxDate}}" value="{{.Input.ReceivedAt}}"
+             {{with .Errors.received_at}}aria-invalid="true" aria-describedby="received_at-error"{{end}}
+             class="mt-1 block w-full rounded-md border {{if .Errors.received_at}}border-red-500{{else}}border-slate-300{{end}} px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+      {{with .Errors.received_at}}<p id="received_at-error" class="mt-1 text-sm text-red-700">{{.}}</p>{{end}}
+    </div>
+  </div>
+
+  <div>
+    {{if .CanReassign}}
+    <label for="assigned_to" class="block text-sm font-medium text-slate-700">Petugas yang ditugaskan</label>
+    <select id="assigned_to" name="assigned_to" required {{with .Errors.assigned_to}}aria-invalid="true" aria-describedby="assigned_to-error"{{end}}
+            class="mt-1 block w-full rounded-md border {{if .Errors.assigned_to}}border-red-500{{else}}border-slate-300{{end}} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+      <option value="">Pilih petugas</option>
+      {{range .Officers}}<option value="{{.ID}}" {{if eq (print .ID) $.Data.Input.AssignedTo}}selected{{end}}>{{.Name}}</option>{{end}}
+    </select>
+    {{with .Errors.assigned_to}}<p id="assigned_to-error" class="mt-1 text-sm text-red-700">{{.}}</p>{{end}}
+    {{else}}
+    <p class="block text-sm font-medium text-slate-700">Petugas yang ditugaskan</p>
+    <p class="mt-1 text-sm text-slate-900">{{.AssigneeName}}</p>
+    <p class="mt-1 text-xs text-slate-500">Penugasan hanya dapat diubah oleh Supervisor.</p>
+    {{end}}
+  </div>
+
+  <div class="flex items-center gap-3 pt-2">
+    <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2">{{.Submit}}</button>
+    <a href="{{.Cancel}}" class="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Batal</a>
+  </div>
+</form>
+{{end}}
+{{end}}
