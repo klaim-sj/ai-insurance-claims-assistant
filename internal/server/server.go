@@ -41,6 +41,9 @@ type Options struct {
 	// Documents opsional; bila nil dibuat dari Pool dan Config.StorageDir.
 	Documents *documents.Service
 	Logger    *slog.Logger
+	// UploadReadTimeout: batas baca body route unggah; 0 berarti
+	// DefaultUploadReadTimeout.
+	UploadReadTimeout time.Duration
 	// SessionCleanupInterval: interval pembersihan session kedaluwarsa.
 	// 0 menonaktifkan goroutine pembersih (berguna untuk test).
 	SessionCleanupInterval time.Duration
@@ -54,11 +57,13 @@ type Server struct {
 	limiter *auth.RateLimiter
 	claims  *claims.Service
 	docs    *documents.Service
-	log     *slog.Logger
-	sm      *scs.SessionManager
-	store   *pgxstore.PostgresStore
-	tmpl    *templates
-	handler http.Handler
+	// uploadReadTimeout: perpanjangan read deadline khusus route unggah.
+	uploadReadTimeout time.Duration
+	log               *slog.Logger
+	sm                *scs.SessionManager
+	store             *pgxstore.PostgresStore
+	tmpl              *templates
+	handler           http.Handler
 }
 
 // New membuat Server.
@@ -106,10 +111,15 @@ func New(o Options) (*Server, error) {
 		limiter: o.Limiter,
 		claims:  o.Claims,
 		docs:    o.Documents,
-		log:     o.Logger,
-		sm:      sm,
-		store:   store,
-		tmpl:    tmpl,
+
+		uploadReadTimeout: o.UploadReadTimeout,
+		log:               o.Logger,
+		sm:                sm,
+		store:             store,
+		tmpl:              tmpl,
+	}
+	if s.uploadReadTimeout <= 0 {
+		s.uploadReadTimeout = DefaultUploadReadTimeout
 	}
 	sm.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 		s.serverError(w, r, err)
@@ -135,7 +145,8 @@ func (s *Server) routes() http.Handler {
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(s.sm.LoadAndSave, s.csrf, s.loadUser)
+		// uploadBody harus sebelum csrf karena csrf membaca body form.
+		r.Use(s.sm.LoadAndSave, s.uploadBody, s.csrf, s.loadUser)
 
 		r.Get("/", s.home)
 		r.Get("/login", s.getLogin)

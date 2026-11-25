@@ -241,14 +241,21 @@ Unggah dan pratinjau dokumen langsung dari halaman detail klaim. Tahap ini
 - **Validasi server-side** (`internal/documents/validate.go`), semua atau
   tidak sama sekali (satu file ditolak → tidak ada yang disimpan):
   - jenis file dari **magic bytes**, harus cocok dengan ekstensi (TC-02);
-  - maksimal 10 MB per file; body multipart dibatasi ±51 MB, dan batas
-    besar hanya berlaku di route unggah untuk sesi yang sudah login;
+  - maksimal 10 MB per file; body multipart dibatasi ±51 MB dengan
+    `http.MaxBytesReader`, hanya di route unggah untuk sesi yang sudah login
+    (request lain dibatasi 64 KB);
   - PNG/JPEG: batas resolusi (anti *decompression bomb*) lalu decode penuh
     untuk mendeteksi file rusak;
   - PDF: header, `startxref`/`%%EOF`, tolak `/Encrypt`, 1–50 halaman
     (termasuk objek halaman di *object stream* terkompresi, dengan batas
     dekompresi). Ini pemeriksaan struktural ringan berbasis stdlib, **bukan**
     parser PDF lengkap.
+- **Timeout**: `http.Server` memakai timeout pendek untuk semua route
+  (`ReadHeaderTimeout` 5 dtk, `ReadTimeout` 15 dtk, `WriteTimeout` 30 dtk;
+  `server.NewHTTPServer`). Hanya route unggah (sesi login) yang
+  memperpanjang read/write deadline **per request** lewat
+  `http.ResponseController` (default 2 menit), di middleware `uploadBody`
+  yang berjalan sebelum CSRF membaca body.
 - **Private storage**: `STORAGE_DIR` (default `storage/documents`, di luar
   `web/static`, di-`.gitignore`). Nama file acak 128-bit (`ab/<32 hex>`),
   tanpa nama asli/ekstensi, izin `0600`/`0700`, akses lewat `os.Root`.
