@@ -94,3 +94,17 @@ func TestLoadWorkerDefaultsAndValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadOCRPSMAndLabelsFile(t *testing.T) {
+	cfg, _, err := Load(env(map[string]string{
+		"DATABASE_URL": "postgres://x", "OCR_PSM": "6,11", "EXTRACTION_LABELS_FILE": " /tmp/labels.json ",
+	}))
+	if err != nil || cfg.OCRPSM != "6,11" || cfg.ExtractionLabelsFile != "/tmp/labels.json" {
+		t.Fatalf("cfg %+v err %v", cfg, err)
+	}
+	for _, bad := range []string{"6,x", "14", "-1"} {
+		if _, _, err := Load(env(map[string]string{"DATABASE_URL": "postgres://x", "OCR_PSM": bad})); err == nil {
+			t.Errorf("OCR_PSM=%q harus ditolak", bad)
+		}
+	}
+}

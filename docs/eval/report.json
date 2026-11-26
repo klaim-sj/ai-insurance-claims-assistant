@@ -4,14 +4,15 @@
   "holdout": false,
   "rule_versions": [
     "MISSING_DOCUMENT v1",
-    "MISSING_FIELD v1",
-    "NAME_MISMATCH v1",
-    "POLICY_MISMATCH v1",
+    "MISSING_FIELD v2",
+    "NAME_MISMATCH v2",
+    "POLICY_MISMATCH v2",
     "DATE_INCONSISTENCY v1",
-    "LOW_QUALITY_DOCUMENT v1"
+    "LOW_QUALITY_DOCUMENT v1",
+    "NEEDS_MANUAL_VERIFICATION v1"
   ],
-  "generated_at": "2026-11-26T07:27:26Z",
-  "extractor_version": "rules-v1",
+  "generated_at": "2026-11-26T10:03:04Z",
+  "extractor_version": "rules-v2",
   "engine_versions": [
     "pdftotext 24.02.0",
     "tesseract 5.3.4"
@@ -76,21 +77,21 @@
             "title": "Gambar identitas sengaja buram",
             "expected": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "predicted": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
               "LOW_QUALITY_DOCUMENT": 1,
-              "MISSING_FIELD": 2
+              "NEEDS_MANUAL_VERIFICATION": 2
             },
             "false_positive": null,
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 claimant_name",
-              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 nik",
+              "NEEDS_MANUAL_VERIFICATION [low] ← d_identitas_buram.png hal.1 claimant_name",
+              "NEEDS_MANUAL_VERIFICATION [low] ← d_identitas_buram.png hal.1 nik",
               "LOW_QUALITY_DOCUMENT [high] ← d_identitas_buram.png hal.1"
             ]
           },
@@ -142,11 +143,11 @@
           },
           {
             "code": "MISSING_FIELD",
-            "tp": 1,
+            "tp": 0,
             "fp": 0,
             "fn": 0,
-            "precision": 1,
-            "recall": 1
+            "precision": null,
+            "recall": null
           },
           {
             "code": "NAME_MISMATCH",
@@ -179,6 +180,14 @@
             "fn": 0,
             "precision": 1,
             "recall": 1
+          },
+          {
+            "code": "NEEDS_MANUAL_VERIFICATION",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
           }
         ],
         "tp": 6,
@@ -187,7 +196,14 @@
         "precision": 1,
         "recall": 1,
         "tp_evidence_complete": 6,
-        "invalid_findings": 0
+        "invalid_findings": 0,
+        "substantive_precision": 1,
+        "substantive_recall": 1,
+        "substantive_tp": 5,
+        "substantive_fp": 0,
+        "substantive_fn": 0,
+        "nmv_instances": 2,
+        "finding_instances": 7
       },
       "files": [
         {
@@ -200,7 +216,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 12,
+          "duration_ms": 9,
           "fields": [
             {
               "field": "claimant_name",
@@ -252,16 +268,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            86.85
+            83.84
           ],
-          "duration_ms": 359,
+          "duration_ms": 968,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "got": "Rani Kusuma Dewi",
               "status": "found",
-              "confidence": 96.42,
+              "confidence": 96.5,
               "outcome": "benar"
             },
             {
@@ -269,7 +285,7 @@
               "expected": "0000********0001",
               "got": "0000********0001",
               "status": "found",
-              "confidence": 92.6,
+              "confidence": 91.17,
               "outcome": "benar"
             }
           ]
@@ -284,7 +300,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 13,
+          "duration_ms": 9,
           "fields": [
             {
               "field": "claimant_name",
@@ -314,7 +330,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 10,
+          "duration_ms": 9,
           "fields": [
             {
               "field": "claimant_name",
@@ -352,7 +368,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 9,
+          "duration_ms": 8,
           "fields": [
             {
               "field": "claimant_name",
@@ -406,7 +422,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 11,
+          "duration_ms": 8,
           "fields": [
             {
               "field": "claimant_name",
@@ -458,22 +474,22 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            27.08
+            40.72
           ],
-          "duration_ms": 466,
+          "duration_ms": 1234,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "status": "uncertain",
-              "confidence": 27.084911799999997,
+              "confidence": 40.715288808510635,
               "outcome": "tidak_menebak"
             },
             {
               "field": "nik",
               "expected": "0000********0001",
               "status": "uncertain",
-              "confidence": 27.084911799999997,
+              "confidence": 40.715288808510635,
               "outcome": "tidak_menebak"
             }
           ]
@@ -488,7 +504,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 14,
+          "duration_ms": 12,
           "fields": [
             {
               "field": "claimant_name",
@@ -580,7 +596,7 @@
       "wrong_count": 0,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 894
+      "total_ms": 2257
     },
     {
       "mode": "scan",
@@ -637,21 +653,21 @@
             "title": "Gambar identitas sengaja buram",
             "expected": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "predicted": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
               "LOW_QUALITY_DOCUMENT": 1,
-              "MISSING_FIELD": 2
+              "NEEDS_MANUAL_VERIFICATION": 2
             },
             "false_positive": null,
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 claimant_name",
-              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 nik",
+              "NEEDS_MANUAL_VERIFICATION [low] ← d_identitas_buram.png hal.1 claimant_name",
+              "NEEDS_MANUAL_VERIFICATION [low] ← d_identitas_buram.png hal.1 nik",
               "LOW_QUALITY_DOCUMENT [high] ← d_identitas_buram.png hal.1"
             ]
           },
@@ -703,11 +719,11 @@
           },
           {
             "code": "MISSING_FIELD",
-            "tp": 1,
+            "tp": 0,
             "fp": 0,
             "fn": 0,
-            "precision": 1,
-            "recall": 1
+            "precision": null,
+            "recall": null
           },
           {
             "code": "NAME_MISMATCH",
@@ -740,6 +756,14 @@
             "fn": 0,
             "precision": 1,
             "recall": 1
+          },
+          {
+            "code": "NEEDS_MANUAL_VERIFICATION",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
           }
         ],
         "tp": 6,
@@ -748,7 +772,14 @@
         "precision": 1,
         "recall": 1,
         "tp_evidence_complete": 6,
-        "invalid_findings": 0
+        "invalid_findings": 0,
+        "substantive_precision": 1,
+        "substantive_recall": 1,
+        "substantive_tp": 5,
+        "substantive_fp": 0,
+        "substantive_fn": 0,
+        "nmv_instances": 2,
+        "finding_instances": 7
       },
       "files": [
         {
@@ -759,16 +790,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            93.51
+            93.52
           ],
-          "duration_ms": 1394,
+          "duration_ms": 2242,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "got": "Rani Kusuma Dewi",
               "status": "found",
-              "confidence": 96.41,
+              "confidence": 96.38,
               "outcome": "benar"
             },
             {
@@ -776,7 +807,7 @@
               "expected": "POL-DEMO-0101",
               "got": "POL-DEMO-0101",
               "status": "found",
-              "confidence": 90.24,
+              "confidence": 88.57,
               "outcome": "benar"
             },
             {
@@ -784,7 +815,7 @@
               "expected": "0000********0001",
               "got": "0000********0001",
               "status": "found",
-              "confidence": 90.34,
+              "confidence": 86.35,
               "outcome": "benar"
             },
             {
@@ -792,7 +823,7 @@
               "expected": "2026-10-10",
               "got": "2026-10-10",
               "status": "found",
-              "confidence": 96.58,
+              "confidence": 96.3,
               "outcome": "benar"
             },
             {
@@ -800,7 +831,7 @@
               "expected": "2750000",
               "got": "2750000",
               "status": "found",
-              "confidence": 95.7,
+              "confidence": 95.82,
               "outcome": "benar"
             }
           ]
@@ -813,16 +844,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            86.85
+            83.84
           ],
-          "duration_ms": 307,
+          "duration_ms": 899,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "got": "Rani Kusuma Dewi",
               "status": "found",
-              "confidence": 96.42,
+              "confidence": 96.5,
               "outcome": "benar"
             },
             {
@@ -830,7 +861,7 @@
               "expected": "0000********0001",
               "got": "0000********0001",
               "status": "found",
-              "confidence": 92.6,
+              "confidence": 91.17,
               "outcome": "benar"
             }
           ]
@@ -843,16 +874,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            94.28
+            95.84
           ],
-          "duration_ms": 1144,
+          "duration_ms": 2013,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "got": "Rani Kusuma Dewi",
               "status": "found",
-              "confidence": 96.41,
+              "confidence": 96.58,
               "outcome": "benar"
             },
             {
@@ -860,7 +891,7 @@
               "expected": "2026-10-10",
               "got": "2026-10-10",
               "status": "found",
-              "confidence": 96.2,
+              "confidence": 96.68,
               "outcome": "benar"
             }
           ]
@@ -873,16 +904,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            93.3
+            95.63
           ],
-          "duration_ms": 1141,
+          "duration_ms": 1998,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "got": "Rani Kusuma Dewi",
               "status": "found",
-              "confidence": 96.2,
+              "confidence": 96.58,
               "outcome": "benar"
             },
             {
@@ -890,7 +921,7 @@
               "expected": "2026-10-12",
               "got": "2026-10-12",
               "status": "found",
-              "confidence": 96.77,
+              "confidence": 96.71,
               "outcome": "benar"
             },
             {
@@ -898,7 +929,7 @@
               "expected": "2750000",
               "got": "2750000",
               "status": "found",
-              "confidence": 95.92,
+              "confidence": 96.87,
               "outcome": "benar"
             }
           ]
@@ -911,16 +942,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            93.35
+            93.39
           ],
-          "duration_ms": 1339,
+          "duration_ms": 2191,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusumawati",
               "got": "Rani Kusumawati",
               "status": "found",
-              "confidence": 92.63,
+              "confidence": 92.87,
               "outcome": "benar"
             },
             {
@@ -928,7 +959,7 @@
               "expected": "POL-DEMO-0101",
               "got": "POL-DEMO-0101",
               "status": "found",
-              "confidence": 90.24,
+              "confidence": 88.57,
               "outcome": "benar"
             },
             {
@@ -936,7 +967,7 @@
               "expected": "0000********0001",
               "got": "0000********0001",
               "status": "found",
-              "confidence": 90.34,
+              "confidence": 86.35,
               "outcome": "benar"
             },
             {
@@ -944,7 +975,7 @@
               "expected": "2026-10-10",
               "got": "2026-10-10",
               "status": "found",
-              "confidence": 96.58,
+              "confidence": 96.3,
               "outcome": "benar"
             },
             {
@@ -952,7 +983,7 @@
               "expected": "2750000",
               "got": "2750000",
               "status": "found",
-              "confidence": 95.7,
+              "confidence": 95.82,
               "outcome": "benar"
             }
           ]
@@ -965,16 +996,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            93.55
+            93.56
           ],
-          "duration_ms": 1349,
+          "duration_ms": 2289,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "got": "Rani Kusuma Dewi",
               "status": "found",
-              "confidence": 96.41,
+              "confidence": 96.38,
               "outcome": "benar"
             },
             {
@@ -982,7 +1013,7 @@
               "expected": "POL-DEMO-0110",
               "got": "POL-DEMO-0110",
               "status": "found",
-              "confidence": 91.13,
+              "confidence": 90.16,
               "outcome": "benar"
             },
             {
@@ -990,7 +1021,7 @@
               "expected": "0000********0001",
               "got": "0000********0001",
               "status": "found",
-              "confidence": 90.34,
+              "confidence": 86.35,
               "outcome": "benar"
             },
             {
@@ -998,7 +1029,7 @@
               "expected": "2026-10-10",
               "got": "2026-10-10",
               "status": "found",
-              "confidence": 96.58,
+              "confidence": 96.3,
               "outcome": "benar"
             },
             {
@@ -1006,7 +1037,7 @@
               "expected": "2750000",
               "got": "2750000",
               "status": "found",
-              "confidence": 95.7,
+              "confidence": 95.82,
               "outcome": "benar"
             }
           ]
@@ -1019,22 +1050,22 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            27.08
+            40.72
           ],
-          "duration_ms": 416,
+          "duration_ms": 1300,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "status": "uncertain",
-              "confidence": 27.084911799999997,
+              "confidence": 40.715288808510635,
               "outcome": "tidak_menebak"
             },
             {
               "field": "nik",
               "expected": "0000********0001",
               "status": "uncertain",
-              "confidence": 27.084911799999997,
+              "confidence": 40.715288808510635,
               "outcome": "tidak_menebak"
             }
           ]
@@ -1047,16 +1078,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            92.74
+            95.63
           ],
-          "duration_ms": 1199,
+          "duration_ms": 2037,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Rani Kusuma Dewi",
               "got": "Rani Kusuma Dewi",
               "status": "found",
-              "confidence": 96.2,
+              "confidence": 96.58,
               "outcome": "benar"
             },
             {
@@ -1064,7 +1095,7 @@
               "expected": "2026-10-05",
               "got": "2026-10-05",
               "status": "found",
-              "confidence": 96.45,
+              "confidence": 96.6,
               "outcome": "benar"
             },
             {
@@ -1072,7 +1103,7 @@
               "expected": "2750000",
               "got": "2750000",
               "status": "found",
-              "confidence": 95.92,
+              "confidence": 96.87,
               "outcome": "benar"
             }
           ]
@@ -1141,7 +1172,7 @@
       "wrong_count": 0,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 8289
+      "total_ms": 14969
     }
   ]
 }

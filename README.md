@@ -28,6 +28,7 @@ Acuan desain: [`docs/blueprint.pdf`](docs/blueprint.pdf).
 | 3. Dokumen | Upload privat, metadata, preview, validasi file, data uji sintetis | ✅ |
 | 4. OCR & ekstraksi | Queue River, OCR (pdftotext/Tesseract), ekstraksi field deterministik, data terdeteksi vs data klaim, `make eval` | ✅ |
 | 5. Validasi | Aturan deterministik, temuan lintas dokumen dengan evidence, job validasi otomatis, panel Temuan, precision/recall + set holdout | ✅ |
+| 5.5 Ketahanan OCR | Pra-pemrosesan gambar, sinonim label lewat konfigurasi, gating confidence (`NEEDS_MANUAL_VERIFICATION`), holdout2 | ✅ (target precision holdout2 belum tercapai; lihat analisis) |
 | 6+ | AI summary, review temuan, laporan | Berikutnya: 6. AI analysis |
 
 ## Stack
@@ -426,6 +427,40 @@ serta *evidence coverage*. Dua laporan terpisah:
   kemiringan, dan noise berbeda; tidak dipakai menyetel; aturan dibekukan
   sebelum set dibuat). Hasil dilaporkan apa adanya.
 
+## Ketahanan OCR & gating confidence (Tahap 5.5)
+
+- **Pra-pemrosesan gambar** (`internal/ocr/preprocess.go`, Go murni tanpa
+  dependensi baru): normalisasi resolusi (sisi panjang ≈ 2400 px, maks ×3),
+  peregangan kontras, median 3×3, deskew (proyeksi baris, ±8°), binarisasi
+  Otsu (Sauvola tersedia), dan penghapusan garis tabel. Berlaku untuk gambar
+  unggahan dan halaman PDF hasil render; lapisan teks PDF tidak disentuh.
+  Dibatasi 60 MP (pertahanan decompression bomb).
+- **PSM Tesseract**: default `6,11` (`OCR_PSM`); setiap mode dijalankan dan
+  hasil berskor tertinggi (jumlah confidence kata ≥ 70) dipakai. Laporan eval
+  memuat perbandingan PSM 3/4/6/11 untuk formulir berbentuk gambar.
+- **Sinonim label** di `internal/extraction/labels.json` (di-embed; override
+  dengan `EXTRACTION_LABELS_FILE`). Divalidasi saat dimuat: field dikenal,
+  tanpa label kosong/ganda. Pemisah `:`/`;`/`|`, pencocokan label multikata di
+  awal baris, label satu kata tanpa pemisah hanya bila diikuti angka/"Rp",
+  toleransi salah baca OCR (jarak edit 1 per kata ≥ 5 huruf). Extractor
+  `rules-v2`.
+- **Gating confidence** (aturan v2, migration `00013`):
+  - `MISSING_FIELD` hanya untuk field `not_found` pada dokumen berkualitas
+    baik.
+  - Field `uncertain` atau dokumen berkualitas rendah →
+    **`NEEDS_MANUAL_VERIFICATION`** (low).
+  - `NAME_MISMATCH` / `POLICY_MISMATCH` hanya bila kedua nilai berconfidence
+    ≥ 85; selain itu `NEEDS_MANUAL_VERIFICATION` (medium; kemungkinan
+    singkatan: low) dengan kedua bukti. Nilai yang sama tidak menghasilkan
+    temuan walau confidence-nya rendah.
+  - Temuan v1 yang masih open menjadi `resolved` pada validasi berikutnya
+    (fingerprint berbeda).
+- **Evaluasi tiga set** (`make eval` → [`docs/eval/summary.md`](docs/eval/summary.md)):
+  utama, holdout (kini set pengembangan), dan **holdout2**
+  (`sample-data/holdout2/`, dibekukan sebelum perbaikan; baseline kode
+  Tahap 5 di `docs/eval/holdout2-baseline/`). Analisis jujur, termasuk target
+  yang belum tercapai: [`docs/eval/analisis-tahap-5.5.md`](docs/eval/analisis-tahap-5.5.md).
+
 ### Target Makefile
 
 | Target | Fungsi |
@@ -439,7 +474,7 @@ serta *evidence coverage*. Dua laporan terpisah:
 | `make seed` | Seed akun demo & klaim demo |
 | `make css` | Build ulang Tailwind (CLI standalone diunduh ke `tmp/bin`) |
 | `make ocr-check` | Cek pdftotext, pdftoppm, tesseract + bahasa `ind` |
-| `make eval` | Evaluasi OCR + ekstraksi + temuan: `sample-data/` → `docs/eval/`, holdout `sample-data/holdout/` → `docs/eval/holdout/` |
+| `make eval` | Evaluasi OCR + ekstraksi + temuan pada tiga set (utama, holdout, holdout2) + ringkasan `docs/eval/summary.md` |
 
 ### Environment variable
 
@@ -534,3 +569,11 @@ di-set otomatis dari status mana pun, job validasi tepat sekali setelah
 dokumen terakhir, end-to-end River (unggah → OCR → temuan → `needs_review`),
 akses lintas petugas ditolak (service & HTTP), audit tanpa PII, panel UI
 tanpa istilah "ditolak"/"tidak layak".
+
+Cakupan Tahap 5.5: gating confidence table-driven (not_found pada dokumen
+baik vs buruk, uncertain, mismatch dengan confidence tinggi/rendah di satu
+sisi, identitas berconfidence rendah tidak jadi acuan, singkatan, nilai sama,
+tanpa aturan NMV), NMV tersimpan dengan rule NMV, peningkatan dari v1,
+pra-pemrosesan (deskew memulihkan sudut, Otsu, median, hapus garis tanpa
+menghapus teks, normalisasi resolusi, determinisme, batas dimensi), daftar
+PSM, validasi/override konfigurasi label, pemisah/awalan/toleransi label.

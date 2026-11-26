@@ -1,17 +1,69 @@
 {
+  "note": "Holdout pertama (Tahap 5). Sejak Tahap 5.5 set ini DIPAKAI untuk menyetel pra-pemrosesan OCR dan ekstraksi, sehingga bukan lagi uji independen; dilaporkan sebagai pembanding.",
+  "psm_comparison": [
+    {
+      "config": "tanpa pra-pemrosesan, PSM 6 (Tahap 5)",
+      "fields": 5,
+      "correct": 0,
+      "accuracy": 0,
+      "total_ms": 457,
+      "files": 1
+    },
+    {
+      "config": "pra-pemrosesan, PSM 3",
+      "fields": 5,
+      "correct": 2,
+      "accuracy": 0.4,
+      "total_ms": 1255,
+      "files": 1
+    },
+    {
+      "config": "pra-pemrosesan, PSM 4",
+      "fields": 5,
+      "correct": 2,
+      "accuracy": 0.4,
+      "total_ms": 1181,
+      "files": 1
+    },
+    {
+      "config": "pra-pemrosesan, PSM 6",
+      "fields": 5,
+      "correct": 1,
+      "accuracy": 0.2,
+      "total_ms": 1357,
+      "files": 1
+    },
+    {
+      "config": "pra-pemrosesan, PSM 11",
+      "fields": 5,
+      "correct": 4,
+      "accuracy": 0.8,
+      "total_ms": 1192,
+      "files": 1
+    },
+    {
+      "config": "pra-pemrosesan, PSM 6+11 (produksi)",
+      "fields": 5,
+      "correct": 4,
+      "accuracy": 0.8,
+      "total_ms": 1826,
+      "files": 1
+    }
+  ],
   "dataset": "holdout",
   "samples": "sample-data/holdout",
   "holdout": true,
   "rule_versions": [
     "MISSING_DOCUMENT v1",
-    "MISSING_FIELD v1",
-    "NAME_MISMATCH v1",
-    "POLICY_MISMATCH v1",
+    "MISSING_FIELD v2",
+    "NAME_MISMATCH v2",
+    "POLICY_MISMATCH v2",
     "DATE_INCONSISTENCY v1",
-    "LOW_QUALITY_DOCUMENT v1"
+    "LOW_QUALITY_DOCUMENT v1",
+    "NEEDS_MANUAL_VERIFICATION v1"
   ],
-  "generated_at": "2026-11-26T07:27:36Z",
-  "extractor_version": "rules-v1",
+  "generated_at": "2026-11-26T10:03:21Z",
+  "extractor_version": "rules-v2",
   "engine_versions": [
     "pdftotext 24.02.0",
     "tesseract 5.3.4"
@@ -30,27 +82,17 @@
             "title": "Set lengkap (nama dengan gelar, tata letak berbeda)",
             "expected": null,
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "MISSING_FIELD": 6,
-              "NAME_MISMATCH": 2
+              "NEEDS_MANUAL_VERIFICATION": 1
             },
             "false_positive": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik"
             ]
           },
           {
@@ -60,29 +102,21 @@
               "NAME_MISMATCH"
             ],
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "MISSING_FIELD": 6,
-              "NAME_MISMATCH": 2
+              "NEEDS_MANUAL_VERIFICATION": 3
             },
             "false_positive": [
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
-            "false_negative": null,
-            "evidence_incomplete": [
+            "false_negative": [
               "NAME_MISMATCH"
             ],
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 amount",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h05_kwitansi_nama_singkat.jpg hal.1 amount",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h05_kwitansi_nama_singkat.jpg hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
             ]
           },
           {
@@ -92,27 +126,19 @@
               "POLICY_MISMATCH"
             ],
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH",
+              "NEEDS_MANUAL_VERIFICATION",
               "POLICY_MISMATCH"
             ],
             "instances": {
-              "MISSING_FIELD": 3,
-              "NAME_MISMATCH": 3,
+              "NEEDS_MANUAL_VERIFICATION": 1,
               "POLICY_MISMATCH": 1
             },
             "false_positive": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h06_formulir_mono_polis_beda.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
               "POLICY_MISMATCH [medium] ← h06_formulir_mono_polis_beda.pdf hal.1 policy_number | claim_record:policy_number"
             ]
           },
@@ -123,34 +149,21 @@
               "DATE_INCONSISTENCY"
             ],
             "predicted": [
-              "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "DATE_INCONSISTENCY",
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "LOW_QUALITY_DOCUMENT": 1,
-              "MISSING_FIELD": 7,
-              "NAME_MISMATCH": 2
+              "DATE_INCONSISTENCY": 1,
+              "NEEDS_MANUAL_VERIFICATION": 2
             },
             "false_positive": [
-              "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
-            "false_negative": [
-              "DATE_INCONSISTENCY"
-            ],
+            "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 claimant_name",
-              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 document_date",
-              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 amount",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "LOW_QUALITY_DOCUMENT [high] ← h07_kwitansi_tanggal_depan.png hal.1"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h07_kwitansi_tanggal_depan.png hal.1 amount",
+              "DATE_INCONSISTENCY [medium] ← h07_kwitansi_tanggal_depan.png hal.1 document_date"
             ]
           },
           {
@@ -158,26 +171,21 @@
             "title": "Identitas noise berat",
             "expected": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "predicted": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
               "LOW_QUALITY_DOCUMENT": 1,
-              "MISSING_FIELD": 7
+              "NEEDS_MANUAL_VERIFICATION": 2
             },
             "false_positive": null,
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 claimant_name",
-              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 nik",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h08_identitas_noise_berat.jpg hal.1 claimant_name",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h08_identitas_noise_berat.jpg hal.1 nik",
               "LOW_QUALITY_DOCUMENT [high] ← h08_identitas_noise_berat.jpg hal.1"
             ]
           },
@@ -188,30 +196,20 @@
               "NAME_MISMATCH"
             ],
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NAME_MISMATCH",
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "MISSING_FIELD": 8,
-              "NAME_MISMATCH": 1
+              "NAME_MISMATCH": 1,
+              "NEEDS_MANUAL_VERIFICATION": 1
             },
             "false_positive": [
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "false_negative": null,
-            "evidence_incomplete": [
-              "NAME_MISMATCH"
-            ],
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [low] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "NAME_MISMATCH [medium] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
             ]
           },
           {
@@ -221,23 +219,16 @@
               "MISSING_DOCUMENT"
             ],
             "predicted": [
-              "MISSING_DOCUMENT",
-              "MISSING_FIELD"
+              "MISSING_DOCUMENT"
             ],
             "instances": {
-              "MISSING_DOCUMENT": 2,
-              "MISSING_FIELD": 3
+              "MISSING_DOCUMENT": 2
             },
-            "false_positive": [
-              "MISSING_FIELD"
-            ],
+            "false_positive": null,
             "false_negative": null,
             "details": [
               "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
-              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date"
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type"
             ]
           }
         ],
@@ -252,19 +243,19 @@
           },
           {
             "code": "MISSING_FIELD",
-            "tp": 1,
-            "fp": 6,
+            "tp": 0,
+            "fp": 0,
             "fn": 0,
-            "precision": 0.1429,
-            "recall": 1
+            "precision": null,
+            "recall": null
           },
           {
             "code": "NAME_MISMATCH",
-            "tp": 2,
-            "fp": 3,
-            "fn": 0,
-            "precision": 0.4,
-            "recall": 1
+            "tp": 1,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1,
+            "recall": 0.5
           },
           {
             "code": "POLICY_MISMATCH",
@@ -276,28 +267,43 @@
           },
           {
             "code": "DATE_INCONSISTENCY",
-            "tp": 0,
+            "tp": 1,
             "fp": 0,
-            "fn": 1,
-            "precision": null,
-            "recall": 0
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
           },
           {
             "code": "LOW_QUALITY_DOCUMENT",
             "tp": 1,
-            "fp": 1,
+            "fp": 0,
             "fn": 0,
-            "precision": 0.5,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "NEEDS_MANUAL_VERIFICATION",
+            "tp": 1,
+            "fp": 5,
+            "fn": 0,
+            "precision": 0.1667,
             "recall": 1
           }
         ],
         "tp": 6,
-        "fp": 10,
+        "fp": 5,
         "fn": 1,
-        "precision": 0.375,
+        "precision": 0.5455,
         "recall": 0.8571,
-        "tp_evidence_complete": 4,
-        "invalid_findings": 0
+        "tp_evidence_complete": 6,
+        "invalid_findings": 0,
+        "substantive_precision": 1,
+        "substantive_recall": 0.8333,
+        "substantive_tp": 5,
+        "substantive_fp": 0,
+        "substantive_fn": 1,
+        "nmv_instances": 10,
+        "finding_instances": 16
       },
       "files": [
         {
@@ -308,39 +314,49 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            65.34
+            91.5
           ],
-          "duration_ms": 394,
+          "duration_ms": 1861,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Ir. Budi Santoso Pratama",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "Ir. Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 95.73,
+              "outcome": "benar"
             },
             {
               "field": "policy_number",
               "expected": "POL-UJI-2207",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "POL-UJI-2207",
+              "status": "found",
+              "confidence": 87.08,
+              "outcome": "benar"
             },
             {
               "field": "nik",
               "expected": "0000********0002",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "0000********0002",
+              "status": "found",
+              "confidence": 69.87,
+              "outcome": "benar"
             },
             {
               "field": "event_date",
               "expected": "2026-09-03",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "2026-09-03",
+              "status": "found",
+              "confidence": 96.16,
+              "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "1",
+              "status": "found",
+              "confidence": 92.4,
+              "outcome": "salah"
             }
           ]
         },
@@ -352,23 +368,25 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            65.15
+            79.11
           ],
-          "duration_ms": 375,
+          "duration_ms": 1345,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
-              "got": "Budi Santoso",
+              "got": "Budi Santoso Pratama",
               "status": "found",
-              "confidence": 96.6,
-              "outcome": "salah"
+              "confidence": 90.08,
+              "outcome": "benar"
             },
             {
               "field": "nik",
               "expected": "0000********0002",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "0000********6002",
+              "status": "uncertain",
+              "confidence": 52.04,
+              "outcome": "uncertain"
             }
           ]
         },
@@ -382,7 +400,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 13,
+          "duration_ms": 19,
           "fields": [
             {
               "field": "claimant_name",
@@ -410,28 +428,32 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            62.45
+            83.97
           ],
-          "duration_ms": 597,
+          "duration_ms": 1432,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 96.67,
+              "outcome": "benar"
             },
             {
               "field": "document_date",
               "expected": "2026-09-05",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "2026-09-05",
+              "status": "found",
+              "confidence": 92.74,
+              "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
               "got": "1850000",
               "status": "found",
-              "confidence": 85.68,
+              "confidence": 70.02,
               "outcome": "benar"
             }
           ]
@@ -444,29 +466,33 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            64.78
+            82.26
           ],
-          "duration_ms": 460,
+          "duration_ms": 1603,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "B. Santoso Pratama",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "B. Santoso Pratama",
+              "status": "found",
+              "confidence": 82.22,
+              "outcome": "benar"
             },
             {
               "field": "document_date",
               "expected": "2026-09-05",
               "got": "2026-09-05",
               "status": "found",
-              "confidence": 71.22,
+              "confidence": 85.13,
               "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "1856",
+              "status": "uncertain",
+              "confidence": 12.19,
+              "outcome": "uncertain"
             }
           ]
         },
@@ -480,7 +506,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 13,
+          "duration_ms": 10,
           "fields": [
             {
               "field": "claimant_name",
@@ -517,8 +543,10 @@
             {
               "field": "amount",
               "expected": "1850000",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "1850000",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
             }
           ]
         },
@@ -530,29 +558,32 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            46.76
+            76.65
           ],
-          "duration_ms": 563,
+          "duration_ms": 1459,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
-              "status": "uncertain",
-              "confidence": 46.76150951666666,
-              "outcome": "uncertain"
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 92.22,
+              "outcome": "benar"
             },
             {
               "field": "document_date",
               "expected": "2026-11-21",
-              "status": "uncertain",
-              "confidence": 46.76150951666666,
-              "outcome": "uncertain"
+              "got": "2026-11-21",
+              "status": "found",
+              "confidence": 96.19,
+              "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
+              "got": "1",
               "status": "uncertain",
-              "confidence": 46.76150951666666,
+              "confidence": 0,
               "outcome": "uncertain"
             }
           ]
@@ -565,22 +596,22 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            15.05
+            40.68
           ],
-          "duration_ms": 6917,
+          "duration_ms": 13349,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
               "status": "uncertain",
-              "confidence": 15.047355961977189,
+              "confidence": 40.681357810888215,
               "outcome": "tidak_menebak"
             },
             {
               "field": "nik",
               "expected": "0000********0002",
               "status": "uncertain",
-              "confidence": 15.047355961977189,
+              "confidence": 40.681357810888215,
               "outcome": "tidak_menebak"
             }
           ]
@@ -593,23 +624,25 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            70.12
+            90.57
           ],
-          "duration_ms": 548,
+          "duration_ms": 1421,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Setiawan",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "Budi Setiawan",
+              "status": "found",
+              "confidence": 96.78,
+              "outcome": "benar"
             },
             {
               "field": "event_date",
               "expected": "2026-09-03",
               "got": "2026-09-03",
-              "status": "uncertain",
-              "confidence": 53.67,
-              "outcome": "uncertain"
+              "status": "found",
+              "confidence": 96.57,
+              "outcome": "benar"
             }
           ]
         }
@@ -618,66 +651,66 @@
         {
           "field": "claimant_name",
           "total": 8,
-          "correct": 2,
-          "wrong": 1,
-          "uncertain": 1,
-          "not_found": 4,
-          "accuracy": 0.25
+          "correct": 8,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "policy_number",
           "total": 2,
-          "correct": 1,
+          "correct": 2,
           "wrong": 0,
           "uncertain": 0,
-          "not_found": 1,
-          "accuracy": 0.5
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "nik",
           "total": 3,
-          "correct": 1,
+          "correct": 2,
           "wrong": 0,
-          "uncertain": 0,
-          "not_found": 2,
-          "accuracy": 0.3333
+          "uncertain": 1,
+          "not_found": 0,
+          "accuracy": 0.6667
         },
         {
           "field": "event_date",
           "total": 4,
-          "correct": 2,
+          "correct": 4,
           "wrong": 0,
-          "uncertain": 1,
-          "not_found": 1,
-          "accuracy": 0.5
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "document_date",
           "total": 3,
-          "correct": 1,
+          "correct": 3,
           "wrong": 0,
-          "uncertain": 1,
-          "not_found": 1,
-          "accuracy": 0.3333
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "amount",
           "total": 5,
-          "correct": 1,
-          "wrong": 0,
-          "uncertain": 1,
-          "not_found": 3,
-          "accuracy": 0.2
+          "correct": 2,
+          "wrong": 1,
+          "uncertain": 2,
+          "not_found": 0,
+          "accuracy": 0.4
         }
       ],
-      "overall_accuracy": 0.32,
+      "overall_accuracy": 0.84,
       "total_fields": 25,
-      "uncertain_count": 4,
-      "not_found_count": 12,
+      "uncertain_count": 3,
+      "not_found_count": 0,
       "wrong_count": 1,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 9880
+      "total_ms": 22499
     },
     {
       "mode": "scan",
@@ -688,27 +721,17 @@
             "title": "Set lengkap (nama dengan gelar, tata letak berbeda)",
             "expected": null,
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "MISSING_FIELD": 6,
-              "NAME_MISMATCH": 2
+              "NEEDS_MANUAL_VERIFICATION": 1
             },
             "false_positive": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik"
             ]
           },
           {
@@ -718,29 +741,21 @@
               "NAME_MISMATCH"
             ],
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "MISSING_FIELD": 6,
-              "NAME_MISMATCH": 2
+              "NEEDS_MANUAL_VERIFICATION": 3
             },
             "false_positive": [
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
-            "false_negative": null,
-            "evidence_incomplete": [
+            "false_negative": [
               "NAME_MISMATCH"
             ],
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 amount",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h05_kwitansi_nama_singkat.jpg hal.1 amount",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h05_kwitansi_nama_singkat.jpg hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
             ]
           },
           {
@@ -750,27 +765,19 @@
               "POLICY_MISMATCH"
             ],
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH",
+              "NEEDS_MANUAL_VERIFICATION",
               "POLICY_MISMATCH"
             ],
             "instances": {
-              "MISSING_FIELD": 3,
-              "NAME_MISMATCH": 3,
+              "NEEDS_MANUAL_VERIFICATION": 1,
               "POLICY_MISMATCH": 1
             },
             "false_positive": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h06_formulir_mono_polis_beda.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
               "POLICY_MISMATCH [medium] ← h06_formulir_mono_polis_beda.pdf hal.1 policy_number | claim_record:policy_number"
             ]
           },
@@ -781,34 +788,21 @@
               "DATE_INCONSISTENCY"
             ],
             "predicted": [
-              "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "DATE_INCONSISTENCY",
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "LOW_QUALITY_DOCUMENT": 1,
-              "MISSING_FIELD": 7,
-              "NAME_MISMATCH": 2
+              "DATE_INCONSISTENCY": 1,
+              "NEEDS_MANUAL_VERIFICATION": 2
             },
             "false_positive": [
-              "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
-            "false_negative": [
-              "DATE_INCONSISTENCY"
-            ],
+            "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 claimant_name",
-              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 document_date",
-              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 amount",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
-              "LOW_QUALITY_DOCUMENT [high] ← h07_kwitansi_tanggal_depan.png hal.1"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h07_kwitansi_tanggal_depan.png hal.1 amount",
+              "DATE_INCONSISTENCY [medium] ← h07_kwitansi_tanggal_depan.png hal.1 document_date"
             ]
           },
           {
@@ -816,26 +810,21 @@
             "title": "Identitas noise berat",
             "expected": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "predicted": [
               "LOW_QUALITY_DOCUMENT",
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
               "LOW_QUALITY_DOCUMENT": 1,
-              "MISSING_FIELD": 7
+              "NEEDS_MANUAL_VERIFICATION": 2
             },
             "false_positive": null,
             "false_negative": null,
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 claimant_name",
-              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 nik",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h08_identitas_noise_berat.jpg hal.1 claimant_name",
+              "NEEDS_MANUAL_VERIFICATION [low] ← h08_identitas_noise_berat.jpg hal.1 nik",
               "LOW_QUALITY_DOCUMENT [high] ← h08_identitas_noise_berat.jpg hal.1"
             ]
           },
@@ -846,30 +835,20 @@
               "NAME_MISMATCH"
             ],
             "predicted": [
-              "MISSING_FIELD",
-              "NAME_MISMATCH"
+              "NAME_MISMATCH",
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "instances": {
-              "MISSING_FIELD": 8,
-              "NAME_MISMATCH": 1
+              "NAME_MISMATCH": 1,
+              "NEEDS_MANUAL_VERIFICATION": 1
             },
             "false_positive": [
-              "MISSING_FIELD"
+              "NEEDS_MANUAL_VERIFICATION"
             ],
             "false_negative": null,
-            "evidence_incomplete": [
-              "NAME_MISMATCH"
-            ],
             "details": [
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
-              "MISSING_FIELD [medium] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [low] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 event_date",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
-              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+              "NEEDS_MANUAL_VERIFICATION [low] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "NAME_MISMATCH [medium] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
             ]
           },
           {
@@ -879,23 +858,16 @@
               "MISSING_DOCUMENT"
             ],
             "predicted": [
-              "MISSING_DOCUMENT",
-              "MISSING_FIELD"
+              "MISSING_DOCUMENT"
             ],
             "instances": {
-              "MISSING_DOCUMENT": 2,
-              "MISSING_FIELD": 3
+              "MISSING_DOCUMENT": 2
             },
-            "false_positive": [
-              "MISSING_FIELD"
-            ],
+            "false_positive": null,
             "false_negative": null,
             "details": [
               "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
-              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
-              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date"
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type"
             ]
           }
         ],
@@ -910,19 +882,19 @@
           },
           {
             "code": "MISSING_FIELD",
-            "tp": 1,
-            "fp": 6,
+            "tp": 0,
+            "fp": 0,
             "fn": 0,
-            "precision": 0.1429,
-            "recall": 1
+            "precision": null,
+            "recall": null
           },
           {
             "code": "NAME_MISMATCH",
-            "tp": 2,
-            "fp": 3,
-            "fn": 0,
-            "precision": 0.4,
-            "recall": 1
+            "tp": 1,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1,
+            "recall": 0.5
           },
           {
             "code": "POLICY_MISMATCH",
@@ -934,28 +906,43 @@
           },
           {
             "code": "DATE_INCONSISTENCY",
-            "tp": 0,
+            "tp": 1,
             "fp": 0,
-            "fn": 1,
-            "precision": null,
-            "recall": 0
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
           },
           {
             "code": "LOW_QUALITY_DOCUMENT",
             "tp": 1,
-            "fp": 1,
+            "fp": 0,
             "fn": 0,
-            "precision": 0.5,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "NEEDS_MANUAL_VERIFICATION",
+            "tp": 1,
+            "fp": 5,
+            "fn": 0,
+            "precision": 0.1667,
             "recall": 1
           }
         ],
         "tp": 6,
-        "fp": 10,
+        "fp": 5,
         "fn": 1,
-        "precision": 0.375,
+        "precision": 0.5455,
         "recall": 0.8571,
-        "tp_evidence_complete": 4,
-        "invalid_findings": 0
+        "tp_evidence_complete": 6,
+        "invalid_findings": 0,
+        "substantive_precision": 1,
+        "substantive_recall": 0.8333,
+        "substantive_tp": 5,
+        "substantive_fp": 0,
+        "substantive_fn": 1,
+        "nmv_instances": 10,
+        "finding_instances": 16
       },
       "files": [
         {
@@ -966,39 +953,49 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            65.34
+            91.5
           ],
-          "duration_ms": 373,
+          "duration_ms": 1827,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Ir. Budi Santoso Pratama",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "Ir. Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 95.73,
+              "outcome": "benar"
             },
             {
               "field": "policy_number",
               "expected": "POL-UJI-2207",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "POL-UJI-2207",
+              "status": "found",
+              "confidence": 87.08,
+              "outcome": "benar"
             },
             {
               "field": "nik",
               "expected": "0000********0002",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "0000********0002",
+              "status": "found",
+              "confidence": 69.87,
+              "outcome": "benar"
             },
             {
               "field": "event_date",
               "expected": "2026-09-03",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "2026-09-03",
+              "status": "found",
+              "confidence": 96.16,
+              "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "1",
+              "status": "found",
+              "confidence": 92.4,
+              "outcome": "salah"
             }
           ]
         },
@@ -1010,23 +1007,25 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            65.15
+            79.11
           ],
-          "duration_ms": 336,
+          "duration_ms": 1309,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
-              "got": "Budi Santoso",
+              "got": "Budi Santoso Pratama",
               "status": "found",
-              "confidence": 96.6,
-              "outcome": "salah"
+              "confidence": 90.08,
+              "outcome": "benar"
             },
             {
               "field": "nik",
               "expected": "0000********0002",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "0000********6002",
+              "status": "uncertain",
+              "confidence": 52.04,
+              "outcome": "uncertain"
             }
           ]
         },
@@ -1038,16 +1037,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            95.52
+            95.67
           ],
-          "duration_ms": 1105,
+          "duration_ms": 1796,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
               "got": "Budi Santoso Pratama",
               "status": "found",
-              "confidence": 96.42,
+              "confidence": 96.33,
               "outcome": "benar"
             },
             {
@@ -1055,7 +1054,7 @@
               "expected": "2026-09-03",
               "got": "2026-09-03",
               "status": "found",
-              "confidence": 96.27,
+              "confidence": 96.68,
               "outcome": "benar"
             }
           ]
@@ -1068,28 +1067,32 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            62.45
+            83.97
           ],
-          "duration_ms": 508,
+          "duration_ms": 1452,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 96.67,
+              "outcome": "benar"
             },
             {
               "field": "document_date",
               "expected": "2026-09-05",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "2026-09-05",
+              "status": "found",
+              "confidence": 92.74,
+              "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
               "got": "1850000",
               "status": "found",
-              "confidence": 85.68,
+              "confidence": 70.02,
               "outcome": "benar"
             }
           ]
@@ -1102,29 +1105,33 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            64.78
+            82.26
           ],
-          "duration_ms": 525,
+          "duration_ms": 1408,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "B. Santoso Pratama",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "B. Santoso Pratama",
+              "status": "found",
+              "confidence": 82.22,
+              "outcome": "benar"
             },
             {
               "field": "document_date",
               "expected": "2026-09-05",
               "got": "2026-09-05",
               "status": "found",
-              "confidence": 71.22,
+              "confidence": 85.13,
               "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "1856",
+              "status": "uncertain",
+              "confidence": 12.19,
+              "outcome": "uncertain"
             }
           ]
         },
@@ -1136,16 +1143,16 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            93.34
+            94.4
           ],
-          "duration_ms": 1228,
+          "duration_ms": 1880,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
               "got": "Budi Santoso Pratama",
               "status": "found",
-              "confidence": 96.2,
+              "confidence": 96.01,
               "outcome": "benar"
             },
             {
@@ -1153,7 +1160,7 @@
               "expected": "POL-UJI-2270",
               "got": "POL-UJI-2270",
               "status": "found",
-              "confidence": 90.08,
+              "confidence": 90.78,
               "outcome": "benar"
             },
             {
@@ -1161,7 +1168,7 @@
               "expected": "0000********0002",
               "got": "0000********0002",
               "status": "found",
-              "confidence": 87.66,
+              "confidence": 90.91,
               "outcome": "benar"
             },
             {
@@ -1169,14 +1176,16 @@
               "expected": "2026-09-03",
               "got": "2026-09-03",
               "status": "found",
-              "confidence": 96.26,
+              "confidence": 96.38,
               "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "1850000",
+              "status": "found",
+              "confidence": 85.46,
+              "outcome": "benar"
             }
           ]
         },
@@ -1188,29 +1197,32 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            46.76
+            76.65
           ],
-          "duration_ms": 660,
+          "duration_ms": 1446,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
-              "status": "uncertain",
-              "confidence": 46.76150951666666,
-              "outcome": "uncertain"
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 92.22,
+              "outcome": "benar"
             },
             {
               "field": "document_date",
               "expected": "2026-11-21",
-              "status": "uncertain",
-              "confidence": 46.76150951666666,
-              "outcome": "uncertain"
+              "got": "2026-11-21",
+              "status": "found",
+              "confidence": 96.19,
+              "outcome": "benar"
             },
             {
               "field": "amount",
               "expected": "1850000",
+              "got": "1",
               "status": "uncertain",
-              "confidence": 46.76150951666666,
+              "confidence": 0,
               "outcome": "uncertain"
             }
           ]
@@ -1223,22 +1235,22 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            15.05
+            40.68
           ],
-          "duration_ms": 7001,
+          "duration_ms": 13325,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Santoso Pratama",
               "status": "uncertain",
-              "confidence": 15.047355961977189,
+              "confidence": 40.681357810888215,
               "outcome": "tidak_menebak"
             },
             {
               "field": "nik",
               "expected": "0000********0002",
               "status": "uncertain",
-              "confidence": 15.047355961977189,
+              "confidence": 40.681357810888215,
               "outcome": "tidak_menebak"
             }
           ]
@@ -1251,23 +1263,25 @@
             "tesseract"
           ],
           "page_mean_confidence": [
-            70.12
+            90.57
           ],
-          "duration_ms": 585,
+          "duration_ms": 1571,
           "fields": [
             {
               "field": "claimant_name",
               "expected": "Budi Setiawan",
-              "status": "not_found",
-              "outcome": "not_found"
+              "got": "Budi Setiawan",
+              "status": "found",
+              "confidence": 96.78,
+              "outcome": "benar"
             },
             {
               "field": "event_date",
               "expected": "2026-09-03",
               "got": "2026-09-03",
-              "status": "uncertain",
-              "confidence": 53.67,
-              "outcome": "uncertain"
+              "status": "found",
+              "confidence": 96.57,
+              "outcome": "benar"
             }
           ]
         }
@@ -1276,66 +1290,66 @@
         {
           "field": "claimant_name",
           "total": 8,
-          "correct": 2,
-          "wrong": 1,
-          "uncertain": 1,
-          "not_found": 4,
-          "accuracy": 0.25
+          "correct": 8,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "policy_number",
           "total": 2,
-          "correct": 1,
+          "correct": 2,
           "wrong": 0,
           "uncertain": 0,
-          "not_found": 1,
-          "accuracy": 0.5
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "nik",
           "total": 3,
-          "correct": 1,
+          "correct": 2,
           "wrong": 0,
-          "uncertain": 0,
-          "not_found": 2,
-          "accuracy": 0.3333
+          "uncertain": 1,
+          "not_found": 0,
+          "accuracy": 0.6667
         },
         {
           "field": "event_date",
           "total": 4,
-          "correct": 2,
+          "correct": 4,
           "wrong": 0,
-          "uncertain": 1,
-          "not_found": 1,
-          "accuracy": 0.5
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "document_date",
           "total": 3,
-          "correct": 1,
+          "correct": 3,
           "wrong": 0,
-          "uncertain": 1,
-          "not_found": 1,
-          "accuracy": 0.3333
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
         },
         {
           "field": "amount",
           "total": 5,
-          "correct": 1,
-          "wrong": 0,
-          "uncertain": 1,
-          "not_found": 3,
-          "accuracy": 0.2
+          "correct": 2,
+          "wrong": 1,
+          "uncertain": 2,
+          "not_found": 0,
+          "accuracy": 0.4
         }
       ],
-      "overall_accuracy": 0.32,
+      "overall_accuracy": 0.84,
       "total_fields": 25,
-      "uncertain_count": 4,
-      "not_found_count": 12,
+      "uncertain_count": 3,
+      "not_found_count": 0,
       "wrong_count": 1,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 12321
+      "total_ms": 26014
     }
   ]
 }
