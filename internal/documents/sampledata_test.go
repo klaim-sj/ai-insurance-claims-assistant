@@ -20,6 +20,11 @@ func TestHoldoutDataValid(t *testing.T) {
 	checkSampleDir(t, filepath.Join("..", "..", "sample-data", "holdout"), 7)
 }
 
+// TestHoldout2DataValid: set holdout2 (Tahap 5.5).
+func TestHoldout2DataValid(t *testing.T) {
+	checkSampleDir(t, filepath.Join("..", "..", "sample-data", "holdout2"), 7)
+}
+
 func checkSampleDir(t *testing.T, dir string, scenarios int) {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, "expected.json"))

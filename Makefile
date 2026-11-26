@@ -73,13 +73,20 @@ ocr-check:
 	@tesseract --list-langs 2>/dev/null | grep -qx ind || (echo "Bahasa tesseract 'ind' belum terpasang (tesseract-ocr-ind)" && exit 1)
 
 # Evaluasi OCR + ekstraksi + temuan rule engine (precision/recall per
-# finding_code) terhadap expected.json; tidak butuh database.
-#   - dataset utama  : sample-data/          -> docs/eval/
-#   - dataset holdout: sample-data/holdout/  -> docs/eval/holdout/
-#     (tidak dipakai menyetel aturan; dilaporkan terpisah apa adanya)
+# finding_code, jumlah NEEDS_MANUAL_VERIFICATION, waktu proses) terhadap
+# expected.json; tidak butuh database. Tiga set dilaporkan terpisah:
+#   - utama   : sample-data/          -> docs/eval/
+#   - holdout : sample-data/holdout/  -> docs/eval/holdout/   (dipakai menyetel Tahap 5.5)
+#   - holdout2: sample-data/holdout2/ -> docs/eval/holdout2/  (dibekukan sebelum perbaikan)
+# lalu ringkasan lintas set -> docs/eval/summary.md.
+HOLDOUT_NOTE := Holdout pertama (Tahap 5). Sejak Tahap 5.5 set ini DIPAKAI untuk menyetel pra-pemrosesan OCR dan ekstraksi, sehingga bukan lagi uji independen; dilaporkan sebagai pembanding.
+HOLDOUT2_NOTE := Holdout2 dibuat dan di-commit sebelum perbaikan Tahap 5.5 ditulis, tidak dipakai menyetel, dan dijalankan dengan kode final sekali; baseline kode Tahap 5 ada di docs/eval/holdout2-baseline/. Dilaporkan apa adanya.
+
 eval: ocr-check
 	go run ./cmd/eval -samples sample-data -out docs/eval -dataset utama
-	go run ./cmd/eval -samples sample-data/holdout -out docs/eval/holdout -dataset holdout -holdout
+	go run ./cmd/eval -samples sample-data/holdout -out docs/eval/holdout -dataset holdout -holdout -psm-compare -note "$(HOLDOUT_NOTE)"
+	go run ./cmd/eval -samples sample-data/holdout2 -out docs/eval/holdout2 -dataset holdout2 -holdout -psm-compare -note "$(HOLDOUT2_NOTE)"
+	go run ./cmd/eval -summarize docs/eval,docs/eval/holdout,docs/eval/holdout2,docs/eval/holdout2-baseline -out docs/eval/summary.md
 
 seed: db-check
 	go run ./cmd/seed

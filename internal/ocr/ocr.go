@@ -48,6 +48,10 @@ type Page struct {
 	Engine        string
 	EngineVersion string
 	Lines         []Line
+	// PSM dan Preprocessed: konfigurasi Tesseract yang terpilih (kosong
+	// untuk lapisan teks PDF); hanya untuk diagnostik/evaluasi.
+	PSM          string
+	Preprocessed bool
 	// MeanConfidence: rata-rata confidence kata; nil bila tidak ada kata.
 	MeanConfidence *float64
 	WordCount      int

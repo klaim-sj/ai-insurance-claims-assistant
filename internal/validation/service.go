@@ -460,6 +460,8 @@ func SuggestionFor(code string) Suggestion {
 		return Suggestion{Text: "Verifikasi nomor polis pada sistem polis; perbaiki data klaim atau minta formulir yang benar."}
 	case CodeDateInconsistency:
 		return Suggestion{Text: "Konfirmasi tanggal ke fasilitas kesehatan; kemungkinan salah ketik perlu diperiksa."}
+	case CodeNeedsManualVerification:
+		return Suggestion{Text: "Cocokkan nilai langsung dengan pratinjau dokumen; sistem tidak cukup yakin membaca atau membandingkannya secara otomatis."}
 	}
 	return Suggestion{}
 }

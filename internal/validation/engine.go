@@ -127,12 +127,41 @@ func truncate(s string, n int) string {
 	return string(r[:n-1]) + "…"
 }
 
+// nmvSettings: perilaku NEEDS_MANUAL_VERIFICATION (aktif bila aturannya
+// aktif). Bila tidak aktif, kondisi yang seharusnya NMV tidak dilaporkan.
+type nmvSettings struct {
+	enabled    bool
+	field, cmp Severity
+}
+
 // Evaluate menjalankan seluruh aturan aktif secara deterministik. Urutan
 // keluaran stabil (urutan aturan, lalu urutan dokumen). Setiap temuan
 // sudah lolos Finding.Validate; aturan yang menghasilkan temuan tidak valid
 // mengembalikan error (tidak pernah disimpan diam-diam tanpa evidence).
+//
+// Temuan NEEDS_MANUAL_VERIFICATION dihasilkan oleh aturan MISSING_FIELD,
+// NAME_MISMATCH, dan POLICY_MISMATCH (gating confidence) tetapi dicatat
+// dengan rule_id/versi aturan NEEDS_MANUAL_VERIFICATION.
 func Evaluate(in Input, rules []Rule) ([]Finding, error) {
 	docs := considered(in.Documents)
+	byCode := map[string]Rule{}
+	for _, r := range rules {
+		byCode[r.Code] = r
+	}
+	nmv := nmvSettings{field: SeverityLow, cmp: SeverityMedium}
+	if r, ok := byCode[CodeNeedsManualVerification]; ok {
+		cfg, err := decode[NeedsManualVerificationConfig](r)
+		if err != nil {
+			return nil, err
+		}
+		nmv.enabled = true
+		if cfg.FieldSeverity.Valid() {
+			nmv.field = cfg.FieldSeverity
+		}
+		if cfg.ComparisonSeverity.Valid() {
+			nmv.cmp = cfg.ComparisonSeverity
+		}
+	}
 	var out []Finding
 	for _, r := range rules {
 		var (
@@ -143,32 +172,88 @@ func Evaluate(in Input, rules []Rule) ([]Finding, error) {
 		case CodeMissingDocument:
 			fs, err = missingDocument(in, r)
 		case CodeMissingField:
-			fs, err = missingField(docs, r)
+			fs, err = missingField(docs, r, nmv)
 		case CodeNameMismatch:
-			fs, err = nameMismatch(in.Claim, docs, r)
+			fs, err = nameMismatch(in.Claim, docs, r, nmv)
 		case CodePolicyMismatch:
-			fs, err = policyMismatch(in.Claim, docs, r)
+			fs, err = policyMismatch(in.Claim, docs, r, nmv)
 		case CodeDateInconsistency:
 			fs, err = dateInconsistency(docs, in.Today, r)
 		case CodeLowQualityDocument:
 			fs, err = lowQuality(docs, r)
 		default:
-			continue // aturan tanpa implementasi diabaikan
+			continue // NMV dihasilkan aturan lain; aturan tanpa implementasi diabaikan
 		}
 		if err != nil {
 			return nil, err
 		}
 		for i := range fs {
-			fs[i].Code = r.Code
-			fs[i].RuleID = r.ID
-			fs[i].RuleVersion = r.Version
+			owner := r
+			if fs[i].Code == CodeNeedsManualVerification {
+				owner = byCode[CodeNeedsManualVerification]
+			} else {
+				fs[i].Code = r.Code
+			}
+			fs[i].RuleID = owner.ID
+			fs[i].RuleVersion = owner.Version
 			if err := fs[i].Validate(); err != nil {
 				return nil, fmt.Errorf("aturan %s: %w", r.Code, err)
 			}
 		}
 		out = append(out, fs...)
 	}
-	return out, nil
+	return dedupeNMV(out), nil
+}
+
+// dedupeNMV: bila field yang sama sudah muncul sebagai NMV perbandingan
+// (dengan kedua bukti), NMV field untuk field itu tidak ditampilkan lagi.
+func dedupeNMV(fs []Finding) []Finding {
+	covered := map[string]bool{}
+	for _, f := range fs {
+		if f.Code == CodeNeedsManualVerification && strings.HasPrefix(f.Fingerprint, CodeNeedsManualVerification+"|cmp|") {
+			for _, e := range f.Evidence {
+				if e.Source == SourceDocument {
+					covered[fmt.Sprintf("doc:%d|%s", e.DocumentID, e.Field)] = true
+				}
+			}
+		}
+	}
+	out := fs[:0:0]
+	for _, f := range fs {
+		if f.Code == CodeNeedsManualVerification && strings.HasPrefix(f.Fingerprint, CodeNeedsManualVerification+"|field|") {
+			key := strings.TrimPrefix(f.Fingerprint, CodeNeedsManualVerification+"|field|")
+			if covered[key] {
+				continue
+			}
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+// conf mengembalikan confidence field (0 bila tidak ada).
+func conf(f Field) float64 {
+	if f.Confidence == nil {
+		return 0
+	}
+	return *f.Confidence
+}
+
+// docLowQuality: ada halaman OCR di bawah ambang kualitas (lapisan teks
+// PDF dianggap baik bila memuat kata).
+func docLowQuality(d Document, q QualityConfig) bool {
+	for _, p := range d.Pages {
+		if p.Engine == "pdftotext" {
+			if p.WordCount == 0 {
+				return true
+			}
+			continue
+		}
+		if p.WordCount < q.MinWords || p.MeanConfidence == nil || *p.MeanConfidence < q.MinMeanConfidence {
+			return true
+		}
+	}
+	return false
 }
 
 // --- MISSING_DOCUMENT ---
@@ -203,13 +288,14 @@ func missingDocument(in Input, r Rule) ([]Finding, error) {
 
 // --- MISSING_FIELD ---
 
-func missingField(docs []Document, r Rule) ([]Finding, error) {
+func missingField(docs []Document, r Rule, nmv nmvSettings) ([]Finding, error) {
 	cfg, err := decode[MissingFieldConfig](r)
 	if err != nil {
 		return nil, err
 	}
 	var out []Finding
 	for _, d := range docs {
+		lowDoc := cfg.DocumentQuality != nil && docLowQuality(d, *cfg.DocumentQuality)
 		for _, key := range cfg.RequiredFields[d.Type] {
 			f, ok := d.field(key)
 			if ok && f.Status == string(extraction.StatusFound) && f.Value != "" {
@@ -219,22 +305,47 @@ func missingField(docs []Document, r Rule) ([]Finding, error) {
 				f = Field{Key: key, Status: string(extraction.StatusNotFound)}
 			}
 			label := extraction.Key(key).Label()
-			sev := SeverityMedium
-			note := fmt.Sprintf("tidak ditemukan pada %d halaman dokumen", max(d.PageCount, 1))
-			msg := fmt.Sprintf("Field %q tidak ditemukan pada %s; perlu ditinjau.", label, typeLabel(d.Type))
-			if f.Status == string(extraction.StatusUncertain) {
-				sev = SeverityLow
-				note = "terbaca tetapi tidak pasti"
-				if f.Confidence != nil {
-					note = fmt.Sprintf("terbaca tetapi tidak pasti (confidence %.1f)", *f.Confidence)
+			uncertain := f.Status == string(extraction.StatusUncertain)
+			notFoundNote := fmt.Sprintf("tidak ditemukan pada %d halaman dokumen", max(d.PageCount, 1))
+			uncertainNote := "terbaca tetapi tidak pasti"
+			if f.Confidence != nil {
+				uncertainNote = fmt.Sprintf("terbaca tetapi tidak pasti (confidence %.1f)", *f.Confidence)
+			}
+
+			if cfg.DocumentQuality == nil { // v1: tanpa gating kualitas
+				sev, note := SeverityMedium, notFoundNote
+				msg := fmt.Sprintf("Field %q tidak ditemukan pada %s; perlu ditinjau.", label, typeLabel(d.Type))
+				if uncertain {
+					sev, note = SeverityLow, uncertainNote
+					msg = fmt.Sprintf("Field %q pada %s tidak terbaca dengan pasti; perlu ditinjau.", label, typeLabel(d.Type))
 				}
-				msg = fmt.Sprintf("Field %q pada %s tidak terbaca dengan pasti; perlu ditinjau.", label, typeLabel(d.Type))
+				out = append(out, Finding{Severity: sev, Message: msg, Evidence: []Evidence{docEvidence(d, f, note)},
+					Fingerprint: fmt.Sprintf("%s|doc:%d|%s", CodeMissingField, d.ID, key)})
+				continue
+			}
+			// v2: hanya not_found di dokumen berkualitas baik yang menjadi
+			// MISSING_FIELD; selain itu verifikasi manual.
+			if !uncertain && !lowDoc {
+				out = append(out, Finding{
+					Severity:    SeverityMedium,
+					Message:     fmt.Sprintf("Field %q tidak ditemukan pada %s; perlu ditinjau.", label, typeLabel(d.Type)),
+					Evidence:    []Evidence{docEvidence(d, f, notFoundNote)},
+					Fingerprint: fmt.Sprintf("%s|doc:%d|%s", CodeMissingField, d.ID, key),
+				})
+				continue
+			}
+			if !nmv.enabled {
+				continue
+			}
+			note, msg := uncertainNote, fmt.Sprintf("Field %q pada %s tidak terbaca dengan pasti; perlu ditinjau secara manual pada dokumen.", label, typeLabel(d.Type))
+			if !uncertain {
+				note = "tidak terbaca; kualitas hasil baca dokumen rendah"
+				msg = fmt.Sprintf("Field %q tidak terbaca pada %s yang kualitas hasil bacanya rendah; perlu ditinjau secara manual pada dokumen.", label, typeLabel(d.Type))
 			}
 			out = append(out, Finding{
-				Severity:    sev,
-				Message:     msg,
+				Code: CodeNeedsManualVerification, Severity: nmv.field, Message: msg,
 				Evidence:    []Evidence{docEvidence(d, f, note)},
-				Fingerprint: fmt.Sprintf("%s|doc:%d|%s", CodeMissingField, d.ID, key),
+				Fingerprint: fmt.Sprintf("%s|field|doc:%d|%s", CodeNeedsManualVerification, d.ID, key),
 			})
 		}
 	}
@@ -248,19 +359,36 @@ type nameSource struct {
 	label string
 	ev    Evidence
 	norm  []string
+	conf  float64
 }
 
-func nameMismatch(c ClaimRecord, docs []Document, r Rule) ([]Finding, error) {
+// comparable: nilai field yang boleh dibandingkan. v1 (minConf = 0):
+// hanya found. v2: found atau uncertain yang punya nilai (perbandingan
+// dengan nilai berconfidence rendah menjadi verifikasi manual, bukan
+// mismatch).
+func comparable(d Document, key string, minConf float64) (Field, bool) {
+	if f, ok := d.found(key); ok {
+		return f, true
+	}
+	if minConf <= 0 {
+		return Field{}, false
+	}
+	f, ok := d.field(key)
+	return f, ok && f.Status == string(extraction.StatusUncertain) && strings.TrimSpace(f.Value) != ""
+}
+
+func nameMismatch(c ClaimRecord, docs []Document, r Rule, nmv nmvSettings) ([]Finding, error) {
 	cfg, err := decode[NameMismatchConfig](r)
 	if err != nil {
 		return nil, err
 	}
 	titles := newTitleSet(cfg.Titles)
+	high := func(v float64) bool { return cfg.MinConfidence <= 0 || v >= cfg.MinConfidence }
 
 	var claimSrc *nameSource
 	if n := titles.normalize(c.ClaimantName); len(n) > 0 {
 		claimSrc = &nameSource{
-			key: "claim", label: "data klaim", norm: n,
+			key: "claim", label: "data klaim", norm: n, conf: 100,
 			ev: Evidence{Source: SourceClaimRecord, Field: "claimant_name", Value: c.ClaimantName},
 		}
 	}
@@ -270,9 +398,9 @@ func nameMismatch(c ClaimRecord, docs []Document, r Rule) ([]Finding, error) {
 		if d.Type == string(documents.TypeOther) {
 			continue
 		}
-		// Nama yang tidak terbaca pasti (uncertain/not_found) tidak
+		// Nama yang tidak terbaca (not_found / uncertain tanpa nilai) tidak
 		// dibandingkan: tidak pernah dianggap cocok maupun berbeda.
-		f, ok := d.found(string(extraction.KeyClaimantName))
+		f, ok := comparable(d, string(extraction.KeyClaimantName), cfg.MinConfidence)
 		if !ok {
 			continue
 		}
@@ -280,16 +408,20 @@ func nameMismatch(c ClaimRecord, docs []Document, r Rule) ([]Finding, error) {
 		if len(n) == 0 {
 			continue
 		}
+		note := ""
+		if !high(conf(f)) {
+			note = fmt.Sprintf("confidence baca %.1f (di bawah %.0f)", conf(f), cfg.MinConfidence)
+		}
 		docSrcs = append(docSrcs, nameSource{
-			key: fmt.Sprintf("doc:%d", d.ID), label: typeLabel(d.Type), norm: n,
-			ev: docEvidence(d, f, ""),
+			key: fmt.Sprintf("doc:%d", d.ID), label: typeLabel(d.Type), norm: n, conf: conf(f),
+			ev: docEvidence(d, f, note),
 		})
-		if d.Type == string(documents.TypeIdentity) {
+		// Acuan: identitas yang namanya terbaca yakin.
+		if d.Type == string(documents.TypeIdentity) && f.Status == string(extraction.StatusFound) && high(conf(f)) {
 			s := docSrcs[len(docSrcs)-1]
 			ref = &s
 		}
 	}
-	// Acuan: dokumen identitas bila namanya terbaca; selain itu data klaim.
 	if ref == nil {
 		ref = claimSrc
 	}
@@ -307,6 +439,23 @@ func nameMismatch(c ClaimRecord, docs []Document, r Rule) ([]Finding, error) {
 		}
 		res := compareNames(s.norm, ref.norm)
 		if res == NameEqual {
+			continue
+		}
+		if !high(s.conf) || !high(ref.conf) {
+			if !nmv.enabled {
+				continue
+			}
+			sev := nmv.cmp
+			if res == NameAbbreviation {
+				sev = nmv.field
+			}
+			out = append(out, Finding{
+				Code: CodeNeedsManualVerification, Severity: sev,
+				Message: fmt.Sprintf("Nama pada %s dan %s tampak berbeda, tetapi hasil baca tidak cukup yakin untuk dibandingkan otomatis; perlu ditinjau secara manual.",
+					s.label, ref.label),
+				Evidence:    []Evidence{s.ev, ref.ev},
+				Fingerprint: fmt.Sprintf("%s|cmp|name|%s|%s|%s", CodeNeedsManualVerification, s.key, ref.key, res),
+			})
 			continue
 		}
 		f := Finding{
@@ -331,24 +480,36 @@ func normPolicy(s string) string {
 	return strings.ToUpper(strings.Join(strings.Fields(s), ""))
 }
 
-func policyMismatch(c ClaimRecord, docs []Document, r Rule) ([]Finding, error) {
+func policyMismatch(c ClaimRecord, docs []Document, r Rule, nmv nmvSettings) ([]Finding, error) {
 	cfg, err := decode[PolicyMismatchConfig](r)
 	if err != nil || strings.TrimSpace(c.PolicyNumber) == "" {
 		return nil, err
 	}
 	var out []Finding
 	for _, d := range latestOfType(docs, cfg.DocumentTypes...) {
-		f, ok := d.found(string(extraction.KeyPolicyNumber))
+		f, ok := comparable(d, string(extraction.KeyPolicyNumber), cfg.MinConfidence)
 		if !ok || normPolicy(f.Value) == normPolicy(c.PolicyNumber) {
 			continue
 		}
+		claimEv := Evidence{Source: SourceClaimRecord, Field: "policy_number", Value: c.PolicyNumber}
+		if cfg.MinConfidence > 0 && conf(f) < cfg.MinConfidence {
+			if !nmv.enabled {
+				continue
+			}
+			out = append(out, Finding{
+				Code: CodeNeedsManualVerification, Severity: nmv.cmp,
+				Message: fmt.Sprintf("Nomor polis pada %s tampak berbeda dengan data klaim, tetapi hasil baca tidak cukup yakin; perlu ditinjau secara manual.", typeLabel(d.Type)),
+				Evidence: []Evidence{
+					docEvidence(d, f, fmt.Sprintf("confidence baca %.1f (di bawah %.0f)", conf(f), cfg.MinConfidence)), claimEv,
+				},
+				Fingerprint: fmt.Sprintf("%s|cmp|policy|doc:%d", CodeNeedsManualVerification, d.ID),
+			})
+			continue
+		}
 		out = append(out, Finding{
-			Severity: SeverityMedium,
-			Message:  fmt.Sprintf("Nomor polis pada %s berbeda dengan nomor polis pada data klaim; perlu ditinjau.", typeLabel(d.Type)),
-			Evidence: []Evidence{
-				docEvidence(d, f, ""),
-				{Source: SourceClaimRecord, Field: "policy_number", Value: c.PolicyNumber},
-			},
+			Severity:    SeverityMedium,
+			Message:     fmt.Sprintf("Nomor polis pada %s berbeda dengan nomor polis pada data klaim; perlu ditinjau.", typeLabel(d.Type)),
+			Evidence:    []Evidence{docEvidence(d, f, ""), claimEv},
 			Fingerprint: fmt.Sprintf("%s|doc:%d", CodePolicyMismatch, d.ID),
 		})
 	}

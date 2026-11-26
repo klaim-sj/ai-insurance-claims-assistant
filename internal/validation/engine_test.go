@@ -108,9 +108,9 @@ func TestRules(t *testing.T) {
 		{"nomor polis formulir tidak ditemukan", func(in *Input) {
 			in.Documents = setField(in.Documents, 1, Field{Key: "policy_number", Status: "not_found"})
 		}, []string{"MISSING_FIELD:medium"}},
-		{"NIK identitas uncertain", func(in *Input) {
+		{"NIK identitas uncertain → verifikasi manual", func(in *Input) {
 			in.Documents = setField(in.Documents, 2, Field{Key: "nik", Status: "uncertain", Confidence: fptr(41), Page: 1})
-		}, []string{"MISSING_FIELD:low"}},
+		}, []string{"NEEDS_MANUAL_VERIFICATION:low"}},
 		{"baris field tidak ada sama sekali", func(in *Input) {
 			in.Documents[3].Fields = in.Documents[3].Fields[:2] // amount hilang
 		}, []string{"MISSING_FIELD:medium"}},
@@ -138,7 +138,7 @@ func TestRules(t *testing.T) {
 		{"identitas uncertain: dibandingkan dengan data klaim, tidak dianggap cocok/berbeda", func(in *Input) {
 			in.Documents = setField(in.Documents, 2, Field{Key: "claimant_name", Status: "uncertain", Page: 1})
 			in.Documents = setField(in.Documents, 1, found("claimant_name", "Rani Kusumawati"))
-		}, []string{"MISSING_FIELD:low", "NAME_MISMATCH:medium"}},
+		}, []string{"NEEDS_MANUAL_VERIFICATION:low", "NAME_MISMATCH:medium"}},
 
 		// POLICY_MISMATCH
 		{"nomor polis berbeda", func(in *Input) {
@@ -206,6 +206,7 @@ func TestFindingsHaveEvidenceAndNoPII(t *testing.T) {
 	in.Documents = setField(in.Documents, 1, found("policy_number", "POL-DEMO-0110"))
 	in.Documents = setField(in.Documents, 4, found("document_date", "2026-10-05"))
 	in.Documents = setField(in.Documents, 2, Field{Key: "nik", Status: "uncertain", Page: 1})
+	in.Documents = setField(in.Documents, 4, Field{Key: "amount", Status: "not_found"})
 	in.Documents = without(in.Documents, 3)
 	fs := run(t, in)
 	seen := map[string]bool{}
@@ -229,7 +230,7 @@ func TestFindingsHaveEvidenceAndNoPII(t *testing.T) {
 			t.Errorf("pesan tidak boleh memuat nilai field: %q", f.Message)
 		}
 	}
-	for _, c := range []string{CodeNameMismatch, CodePolicyMismatch, CodeDateInconsistency, CodeMissingDocument, CodeMissingField} {
+	for _, c := range []string{CodeNameMismatch, CodePolicyMismatch, CodeDateInconsistency, CodeMissingDocument, CodeMissingField, CodeNeedsManualVerification} {
 		if !seen[c] {
 			t.Errorf("temuan %s tidak muncul", c)
 		}
@@ -331,5 +332,105 @@ func TestCompareNames(t *testing.T) {
 		if got != tc.want {
 			t.Errorf("compare(%q, %q) = %s, harap %s (%v vs %v)", tc.a, tc.b, got, tc.want, ts.normalize(tc.a), ts.normalize(tc.b))
 		}
+	}
+}
+
+// Gating confidence (Tahap 5.5): perbedaan/kekosongan hanya dilaporkan
+// sebagai MISSING_FIELD / NAME_MISMATCH / POLICY_MISMATCH bila hasil baca
+// yakin; selain itu NEEDS_MANUAL_VERIFICATION dengan bukti lengkap.
+func TestConfidenceGating(t *testing.T) {
+	lowPage := []Page{{Number: 1, Engine: "tesseract", WordCount: 4, MeanConfidence: fptr(35)}}
+	okPage := []Page{{Number: 1, Engine: "tesseract", WordCount: 60, MeanConfidence: fptr(90)}}
+	withConf := func(f Field, c float64) Field { f.Confidence = fptr(c); return f }
+	cases := []struct {
+		name     string
+		mod      func(in *Input)
+		want     []string
+		evidence int // jumlah evidence minimal pada temuan pertama (0 = abaikan)
+	}{
+		{"not_found di dokumen berkualitas baik → MISSING_FIELD", func(in *Input) {
+			in.Documents[1].Pages = okPage
+			in.Documents = setField(in.Documents, 2, Field{Key: "nik", Status: "not_found"})
+		}, []string{"MISSING_FIELD:medium"}, 1},
+		{"not_found di dokumen berkualitas rendah → NMV (bukan MISSING_FIELD)", func(in *Input) {
+			in.Documents[1].Pages = lowPage
+			in.Documents = setField(in.Documents, 2, Field{Key: "nik", Status: "not_found"})
+		}, []string{"NEEDS_MANUAL_VERIFICATION:low", "LOW_QUALITY_DOCUMENT:high"}, 1},
+		{"uncertain di dokumen berkualitas baik → NMV", func(in *Input) {
+			in.Documents = setField(in.Documents, 4, Field{Key: "amount", Value: "2750000", Status: "uncertain", Confidence: fptr(55), Page: 1})
+		}, []string{"NEEDS_MANUAL_VERIFICATION:low"}, 1},
+		{"nama berbeda, kedua nilai yakin → NAME_MISMATCH", func(in *Input) {
+			in.Documents = setField(in.Documents, 1, withConf(found("claimant_name", "Rani Kusumawati"), 96))
+		}, []string{"NAME_MISMATCH:medium"}, 2},
+		{"nama berbeda, nilai dokumen confidence rendah (found 70) → NMV dengan kedua bukti", func(in *Input) {
+			in.Documents = setField(in.Documents, 1, withConf(found("claimant_name", "Rani Kusumawati"), 70))
+		}, []string{"NEEDS_MANUAL_VERIFICATION:medium"}, 2},
+		{"nama berbeda, nilai dokumen uncertain berisi → satu NMV perbandingan (tanpa NMV field ganda)", func(in *Input) {
+			in.Documents = setField(in.Documents, 1, Field{Key: "claimant_name", Value: "Rani Kusumawati", Status: "uncertain", Confidence: fptr(50), Page: 1})
+		}, []string{"NEEDS_MANUAL_VERIFICATION:medium"}, 2},
+		{"identitas confidence rendah tidak jadi acuan; dokumen lain dibandingkan dengan data klaim", func(in *Input) {
+			in.Documents = setField(in.Documents, 2, withConf(found("claimant_name", "Rani Kusuma Dewl"), 72))
+		}, []string{"NEEDS_MANUAL_VERIFICATION:medium"}, 2},
+		{"kemungkinan singkatan dengan confidence rendah → NMV low", func(in *Input) {
+			in.Documents = setField(in.Documents, 4, withConf(found("claimant_name", "R. Kusuma Dewi"), 75))
+		}, []string{"NEEDS_MANUAL_VERIFICATION:low"}, 2},
+		{"nilai sama walau confidence rendah → tidak ada temuan", func(in *Input) {
+			in.Documents = setField(in.Documents, 1, withConf(found("claimant_name", "Rani Kusuma Dewi"), 62))
+			in.Documents = setField(in.Documents, 1, withConf(found("policy_number", "POL-DEMO-0101"), 62))
+		}, nil, 0},
+		{"polis berbeda, yakin → POLICY_MISMATCH", func(in *Input) {
+			in.Documents = setField(in.Documents, 1, withConf(found("policy_number", "POL-DEMO-0110"), 99))
+		}, []string{"POLICY_MISMATCH:medium"}, 2},
+		{"polis berbeda, confidence rendah → NMV dengan bukti dokumen + data klaim", func(in *Input) {
+			in.Documents = setField(in.Documents, 1, withConf(found("policy_number", "POL-DEMO-0110"), 66))
+		}, []string{"NEEDS_MANUAL_VERIFICATION:medium"}, 2},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			in := Input{Claim: baseClaim(), Documents: baseDocs()}
+			tc.mod(&in)
+			fs := run(t, in)
+			if got := codes(fs); !slices.Equal(got, tc.want) {
+				t.Fatalf("temuan = %v, harap %v", got, tc.want)
+			}
+			if tc.evidence > 0 {
+				for _, f := range fs {
+					if f.Code == CodeLowQualityDocument {
+						continue
+					}
+					if len(f.Evidence) < tc.evidence {
+						t.Fatalf("%s: evidence %d, harap ≥ %d", f.Code, len(f.Evidence), tc.evidence)
+					}
+					if f.Code == CodeNeedsManualVerification {
+						if f.RuleVersion != 1 || !strings.Contains(f.Message, "perlu ditinjau") {
+							t.Fatalf("NMV tidak sesuai: %+v", f)
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+// Tanpa aturan NMV aktif, kondisi berconfidence rendah tidak dilaporkan
+// sebagai mismatch (tidak pernah "naik kelas" menjadi temuan pasti).
+func TestGatingWithoutNMVRule(t *testing.T) {
+	var rules []Rule
+	for _, r := range DefaultRules() {
+		if r.Code != CodeNeedsManualVerification {
+			rules = append(rules, r)
+		}
+	}
+	in := Input{Claim: baseClaim(), Documents: baseDocs(), Today: "2026-10-15"}
+	c := 60.0
+	f := found("claimant_name", "Rani Kusumawati")
+	f.Confidence = &c
+	in.Documents = setField(in.Documents, 1, f)
+	fs, err := Evaluate(in, rules)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fs) != 0 {
+		t.Fatalf("harap tanpa temuan, dapat %v", codes(fs))
 	}
 }

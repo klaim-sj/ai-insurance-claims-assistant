@@ -1,0 +1,12 @@
+{
+  "_comment": "Sinonim label field (dinormalisasi: huruf kecil, tanpa tanda baca selain '/'). Urutan = prioritas. Label satu kata hanya dipakai bila diikuti pemisah (':' ';' '|'); label multikata juga dicocokkan di awal baris tanpa pemisah. Override lewat EXTRACTION_LABELS_FILE.",
+  "version": "labels-v2",
+  "fields": {
+    "claimant_name": ["nama peserta", "nama pemohon", "nama tertanggung", "nama lengkap", "nama pasien", "diterima dari", "telah terima dari", "nama pembayar", "nama"],
+    "policy_number": ["nomor polis peserta", "nomor polis", "no polis", "polis"],
+    "nik": ["nomor induk kependudukan", "no nik", "nik"],
+    "event_date": ["tanggal kejadian / masuk", "tanggal kejadian", "tgl kejadian", "tanggal masuk perawatan", "tanggal masuk", "tanggal rawat"],
+    "document_date": ["tanggal kuitansi", "tanggal surat", "tanggal dokumen", "tanggal pembayaran", "tanggal"],
+    "amount": ["total biaya diajukan", "total biaya", "total klaim", "jumlah total", "total pembayaran", "jumlah dibayar", "total", "jumlah"]
+  }
+}

@@ -173,27 +173,35 @@ func TestSeedMatchesDefaultRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	def := validation.DefaultRules()
+	def := map[string]validation.Rule{}
+	for _, r := range validation.DefaultRules() {
+		def[r.Code] = r
+	}
 	if len(rows) != len(def) {
 		t.Fatalf("aturan aktif %d, default %d", len(rows), len(def))
 	}
-	for i, r := range rows {
+	for _, r := range rows {
+		d, ok := def[r.RuleCode]
+		if !ok {
+			t.Errorf("aturan aktif %s tidak ada di default", r.RuleCode)
+			continue
+		}
 		var a, b any
 		if err := json.Unmarshal(r.RuleConfig, &a); err != nil {
 			t.Fatal(err)
 		}
-		if err := json.Unmarshal(def[i].Config, &b); err != nil {
+		if err := json.Unmarshal(d.Config, &b); err != nil {
 			t.Fatal(err)
 		}
 		ja, _ := json.Marshal(a)
 		jb, _ := json.Marshal(b)
-		if r.RuleCode != def[i].Code || int(r.Version) != def[i].Version || string(ja) != string(jb) {
-			t.Errorf("seed %s v%d %s ≠ default %s v%d %s", r.RuleCode, r.Version, ja, def[i].Code, def[i].Version, jb)
+		if int(r.Version) != d.Version || string(ja) != string(jb) {
+			t.Errorf("seed %s v%d %s ≠ default v%d %s", r.RuleCode, r.Version, ja, d.Version, jb)
 		}
 	}
 	// Hanya satu versi aktif per aturan.
 	if _, err := pool.Exec(context.Background(), `INSERT INTO validation_rules (rule_code, name, description, version)
-		VALUES ('MISSING_FIELD', 'x', 'x', 2)`); err == nil {
+		VALUES ('MISSING_FIELD', 'x', 'x', 3)`); err == nil {
 		t.Fatal("dua versi aktif untuk aturan yang sama harus ditolak")
 	}
 }
@@ -210,7 +218,7 @@ func TestRunCreatesFindingsWithEvidenceAndNeedsReview(t *testing.T) {
 		t.Fatalf("hasil %+v", r)
 	}
 	fs := e.findings()
-	if len(fs) != 1 || fs[0].FindingCode != validation.CodeNameMismatch || fs[0].Status != "open" || fs[0].RuleVersion != 1 {
+	if len(fs) != 1 || fs[0].FindingCode != validation.CodeNameMismatch || fs[0].Status != "open" || fs[0].RuleVersion != 2 {
 		t.Fatalf("temuan %+v", fs)
 	}
 	var ev []validation.Evidence
@@ -449,5 +457,68 @@ func TestAuditAndLogsHaveNoPII(t *testing.T) {
 	}
 	if n < 4 {
 		t.Fatalf("audit terlalu sedikit: %d", n)
+	}
+}
+
+// Field identitas uncertain pada aturan v2 menjadi NEEDS_MANUAL_VERIFICATION
+// (rule NMV v1), bukan MISSING_FIELD; klaim tetap dipindah ke needs_review.
+func TestNeedsManualVerificationPersisted(t *testing.T) {
+	e := newEnv(t, "submitted")
+	_, ident, _, _ := e.fullSet()
+	ctx := context.Background()
+	if _, err := e.pool.Exec(ctx, `UPDATE extracted_fields SET status = 'uncertain', field_value = NULL
+		WHERE document_id = $1 AND field_key = 'nik'`, ident); err != nil {
+		t.Fatal(err)
+	}
+	r := e.run()
+	fs := e.findings()
+	if r.Open != 1 || len(fs) != 1 || fs[0].FindingCode != validation.CodeNeedsManualVerification || fs[0].Severity != "low" {
+		t.Fatalf("hasil %+v temuan %+v", r, fs)
+	}
+	var code string
+	if err := e.pool.QueryRow(ctx, `SELECT rule_code FROM validation_rules WHERE id = $1`, fs[0].RuleID).Scan(&code); err != nil || code != validation.CodeNeedsManualVerification {
+		t.Fatalf("rule_id harus aturan NMV: %s %v", code, err)
+	}
+	if e.status() != "needs_review" {
+		t.Fatalf("status %s", e.status())
+	}
+	p, err := e.svc.Findings(ctx, e.officer, e.claimID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.SuggestNeedDocuments || len(p.Suggestions) != 1 {
+		t.Fatalf("NMV hanya menyarankan verifikasi manual, bukan permintaan dokumen: %+v", p.Suggestions)
+	}
+}
+
+// Temuan v1 yang masih open untuk kondisi yang kini dinilai NMV menjadi
+// resolved saat validasi ulang (fingerprint berbeda), tanpa baris ganda.
+func TestUpgradeFromV1ResolvesOldFinding(t *testing.T) {
+	e := newEnv(t, "submitted")
+	_, ident, _, _ := e.fullSet()
+	ctx := context.Background()
+	if _, err := e.pool.Exec(ctx, `UPDATE extracted_fields SET status = 'uncertain', field_value = NULL
+		WHERE document_id = $1 AND field_key = 'nik'`, ident); err != nil {
+		t.Fatal(err)
+	}
+	var v1 int64
+	if err := e.pool.QueryRow(ctx, `SELECT id FROM validation_rules WHERE rule_code = 'MISSING_FIELD' AND version = 1`).Scan(&v1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.pool.Exec(ctx, `INSERT INTO validation_findings (claim_id, rule_id, rule_version, finding_code, severity, message, evidence_json, fingerprint)
+		VALUES ($1, $2, 1, 'MISSING_FIELD', 'low', 'Field tidak pasti; perlu ditinjau.',
+		        jsonb_build_array(jsonb_build_object('source','document','document_id',$3::bigint,'page',1,'field','nik')),
+		        'MISSING_FIELD|doc:' || $3::bigint || '|nik')`, e.claimID, v1, ident); err != nil {
+		t.Fatal(err)
+	}
+	r := e.run()
+	fs := e.findings()
+	if r.Resolved != 1 || r.Created != 1 || len(fs) != 2 {
+		t.Fatalf("hasil %+v temuan %d", r, len(fs))
+	}
+	for _, f := range fs {
+		if f.FindingCode == validation.CodeMissingField && f.Status != "resolved" {
+			t.Fatalf("temuan v1 harus resolved: %+v", f)
+		}
 	}
 }

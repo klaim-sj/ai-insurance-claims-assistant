@@ -30,6 +30,10 @@ type Config struct {
 	WorkerConcurrency int
 	// OCRTimeout: batas waktu per pemanggilan binary OCR.
 	OCRTimeout time.Duration
+	// OCRPSM: daftar PSM Tesseract dipisah koma (kosong = default engine).
+	OCRPSM string
+	// ExtractionLabelsFile: file JSON sinonim label (kosong = bawaan).
+	ExtractionLabelsFile string
 }
 
 // Nilai default worker OCR.
@@ -89,6 +93,17 @@ func Load(getenv func(string) string) (cfg Config, warnings []string, err error)
 		}
 		cfg.OCRTimeout = d
 	}
+
+	if v := strings.TrimSpace(getenv("OCR_PSM")); v != "" {
+		for _, p := range strings.Split(v, ",") {
+			n, err := strconv.Atoi(strings.TrimSpace(p))
+			if err != nil || n < 0 || n > 13 {
+				return Config{}, nil, errors.New("OCR_PSM harus daftar angka 0–13 dipisah koma, mis. 6,11")
+			}
+		}
+		cfg.OCRPSM = v
+	}
+	cfg.ExtractionLabelsFile = strings.TrimSpace(getenv("EXTRACTION_LABELS_FILE"))
 
 	cfg.TrustProxy = strings.EqualFold(strings.TrimSpace(getenv("TRUST_PROXY")), "true")
 

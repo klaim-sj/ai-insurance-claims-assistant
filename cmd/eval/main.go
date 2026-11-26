@@ -147,6 +147,8 @@ type modeReport struct {
 }
 
 type report struct {
+	Note             string       `json:"note,omitempty"`
+	PSMComparison    []psmRow     `json:"psm_comparison,omitempty"`
 	Dataset          string       `json:"dataset"`
 	Samples          string       `json:"samples"`
 	Holdout          bool         `json:"holdout"`
@@ -164,11 +166,45 @@ func main() {
 	timeout := flag.Duration("timeout", 60*time.Second, "batas waktu per pemanggilan binary OCR")
 	dataset := flag.String("dataset", "utama", "nama dataset di laporan")
 	holdout := flag.Bool("holdout", false, "dataset holdout (tidak dipakai menyetel aturan)")
+	flag.StringVar(&ocrPSM, "psm", "", "daftar PSM Tesseract dipisah koma (kosong = default produksi)")
+	flag.StringVar(&ocrBinarize, "binarize", "", "none|otsu|sauvola (kosong = default produksi)")
+	flag.BoolVar(&ocrNoPre, "no-preprocess", false, "matikan pra-pemrosesan gambar")
+	flag.StringVar(&reportNote, "note", "", "catatan status set (ditampilkan di laporan)")
+	flag.BoolVar(&psmCompare, "psm-compare", false, "sertakan perbandingan PSM untuk formulir berbentuk gambar")
+	summary := flag.String("summarize", "", "daftar direktori laporan dipisah koma; tulis ringkasan ke -out (file .md)")
 	flag.Parse()
+	if *summary != "" {
+		if err := summarizeReports(strings.Split(*summary, ","), *out); err != nil {
+			fmt.Fprintln(os.Stderr, "ringkasan gagal:", err)
+			os.Exit(1)
+		}
+		fmt.Println("ringkasan:", *out)
+		return
+	}
 	if err := run(*samples, *out, *dataset, *holdout, *timeout); err != nil {
 		fmt.Fprintln(os.Stderr, "eval gagal:", err)
 		os.Exit(1)
 	}
+}
+
+// Flag eksperimen OCR (default = konfigurasi produksi).
+var (
+	ocrPSM, ocrBinarize, reportNote string
+	ocrNoPre, psmCompare            bool
+)
+
+func execConfig(timeout time.Duration, force bool) ocr.ExecConfig {
+	cfg := ocr.ExecConfig{Timeout: timeout, ForceOCR: force, PSM: ocrPSM}
+	if cfg.PSM == "" {
+		cfg.PSM = ocr.DefaultPSM
+	}
+	p := ocr.DefaultPreprocess()
+	p.Disabled = ocrNoPre
+	if ocrBinarize != "" {
+		p.Binarize = ocr.Binarize(ocrBinarize)
+	}
+	cfg.Preprocess = &p
+	return cfg
 }
 
 func run(samples, outDir, dataset string, holdout bool, timeout time.Duration) error {
@@ -186,11 +222,11 @@ func run(samples, outDir, dataset string, holdout bool, timeout time.Duration) e
 	}
 
 	ctx := context.Background()
-	std := ocr.NewExec(ocr.ExecConfig{Timeout: timeout})
+	std := ocr.NewExec(execConfig(timeout, false))
 	if err := std.Check(ctx); err != nil {
 		return err
 	}
-	scan := ocr.NewExec(ocr.ExecConfig{Timeout: timeout, ForceOCR: true})
+	scan := ocr.NewExec(execConfig(timeout, true))
 
 	names := make([]string, 0, len(exp.Files))
 	for n := range exp.Files {
@@ -200,6 +236,7 @@ func run(samples, outDir, dataset string, holdout bool, timeout time.Duration) e
 
 	rules := validation.DefaultRules()
 	rep := report{
+		Note:    reportNote,
 		Dataset: dataset, Samples: filepath.ToSlash(samples), Holdout: holdout,
 		GeneratedAt:      time.Now().UTC().Format(time.RFC3339),
 		ExtractorVersion: extraction.Version,
@@ -235,6 +272,11 @@ func run(samples, outDir, dataset string, holdout bool, timeout time.Duration) e
 		rep.Modes = append(rep.Modes, mr)
 	}
 
+	if psmCompare {
+		if rep.PSMComparison, err = comparePSM(ctx, samples, exp, names, timeout); err != nil {
+			return err
+		}
+	}
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}
@@ -322,7 +364,7 @@ func evalFile(ctx context.Context, eng *ocr.Exec, path, name string, ef expected
 		if !ok {
 			f = extraction.Field{Key: k, Status: extraction.StatusNotFound}
 		}
-		r := fieldResult{Field: string(k), Expected: want, Got: f.Value, Status: string(f.Status), Confidence: f.Confidence}
+		r := fieldResult{Field: string(k), Expected: want, Got: pii.MaskNIK(f.Value), Status: string(f.Status), Confidence: f.Confidence}
 		switch {
 		case unreadable && f.Status == extraction.StatusFound:
 			r.Outcome = outGuessed
@@ -421,7 +463,9 @@ func markdown(rep report) string {
 	fmt.Fprintf(&b, "# Evaluasi OCR, ekstraksi field, dan temuan — dataset %s\n\n", rep.Dataset)
 	fmt.Fprintf(&b, "> Dataset: `%s/` (SELURUHNYA SINTETIS). Hasil ekstraksi dan temuan adalah bahan\n", rep.Samples)
 	b.WriteString("> verifikasi petugas (\"perlu ditinjau\"), bukan keputusan klaim. NIK hanya ditampilkan tersamar.\n\n")
-	if rep.Holdout {
+	if rep.Note != "" {
+		fmt.Fprintf(&b, "**Status set**: %s\n\n", rep.Note)
+	} else if rep.Holdout {
 		b.WriteString("**Set holdout**: dokumen di set ini dibuat dengan tata letak, font, kemiringan, dan noise berbeda dan **tidak dipakai untuk menyetel** aturan ekstraksi maupun aturan validasi. Aturan dibekukan sebelum set ini dijalankan pertama kali; angka di bawah dilaporkan apa adanya.\n\n")
 	}
 	fmt.Fprintf(&b, "- Dibuat: %s\n", rep.GeneratedAt)
@@ -437,8 +481,12 @@ func markdown(rep report) string {
 		fmt.Fprintf(&b, "## Mode %s\n\n", m.Mode)
 		findingsMarkdown(&b, m.Findings)
 		b.WriteString("### Ekstraksi field\n\n")
-		fmt.Fprintf(&b, "Akurasi keseluruhan **%.1f%%** (%d field) · uncertain %d · not_found %d · salah baca %d · dokumen tidak terbaca: tidak menebak %d / menebak %d · total waktu %d ms\n\n",
-			m.OverallAccuracy*100, m.TotalFields, m.UncertainCount, m.NotFoundCount, m.WrongCount, m.UnreadableOK, m.UnreadableBad, m.TotalMS)
+		perDoc := int64(0)
+		if len(m.Files) > 0 {
+			perDoc = m.TotalMS / int64(len(m.Files))
+		}
+		fmt.Fprintf(&b, "Akurasi keseluruhan **%.1f%%** (%d field) · uncertain %d · not_found %d · salah baca %d · dokumen tidak terbaca: tidak menebak %d / menebak %d · total waktu %d ms (rata-rata %d ms/dokumen)\n\n",
+			m.OverallAccuracy*100, m.TotalFields, m.UncertainCount, m.NotFoundCount, m.WrongCount, m.UnreadableOK, m.UnreadableBad, m.TotalMS, perDoc)
 		b.WriteString("| Field | Total | Benar | Salah | Uncertain | Not found | Akurasi |\n|---|---:|---:|---:|---:|---:|---:|\n")
 		for _, s := range m.Summary {
 			fmt.Fprintf(&b, "| %s | %d | %d | %d | %d | %d | %.1f%% |\n", s.Field, s.Total, s.Correct, s.Wrong, s.Uncertain, s.NotFound, s.Accuracy*100)
@@ -465,6 +513,7 @@ func markdown(rep report) string {
 		}
 		b.WriteString("\n")
 	}
+	psmMarkdown(&b, rep.PSMComparison)
 	b.WriteString("## Catatan\n\n")
 	if rep.Holdout {
 		b.WriteString("- Set holdout kecil (puluhan field, beberapa skenario); satu dokumen dapat menggeser persentase secara besar. Gunakan sebagai sinyal arah, bukan ukuran kinerja produksi.\n")
@@ -473,6 +522,7 @@ func markdown(rep report) string {
 		b.WriteString("- **Batas validitas**: dataset utama berasal dari satu generator dengan tata letak rapi, dan aturan ekstraksi/validasi disetel memakai file yang sama. Angka tinggi di sini **tidak** mewakili dokumen nyata. Lihat laporan holdout (`docs/eval/holdout/report.md`) untuk set yang tidak dipakai menyetel.\n")
 		b.WriteString("- `document_date` formulir dan surat keterangan tidak punya ground truth di `expected.json`, sehingga tidak dihitung.\n")
 	}
+	b.WriteString("- Konfigurasi OCR: pra-pemrosesan Go (normalisasi resolusi, kontras, median 3×3, deskew, Otsu, hapus garis tabel) + Tesseract PSM " + ocr.DefaultPSM + " (hasil berskor tertinggi). Gating confidence: NAME/POLICY_MISMATCH hanya bila kedua nilai ≥ 85; selain itu `NEEDS_MANUAL_VERIFICATION`.\n")
 	b.WriteString("- Ambang confidence adalah nilai awal prototipe; perlu diuji ulang pada dataset yang lebih representatif.\n")
 	b.WriteString("- Laporan dibuat ulang dengan `make eval`.\n")
 	return b.String()
