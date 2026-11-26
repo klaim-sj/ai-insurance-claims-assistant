@@ -364,7 +364,7 @@ func evalFile(ctx context.Context, eng *ocr.Exec, path, name string, ef expected
 		if !ok {
 			f = extraction.Field{Key: k, Status: extraction.StatusNotFound}
 		}
-		r := fieldResult{Field: string(k), Expected: want, Got: f.Value, Status: string(f.Status), Confidence: f.Confidence}
+		r := fieldResult{Field: string(k), Expected: want, Got: pii.MaskNIK(f.Value), Status: string(f.Status), Confidence: f.Confidence}
 		switch {
 		case unreadable && f.Status == extraction.StatusFound:
 			r.Outcome = outGuessed
