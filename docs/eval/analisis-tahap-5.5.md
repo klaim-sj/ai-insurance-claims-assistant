@@ -12,7 +12,7 @@
 3. Perbaikan disetel **hanya** dengan `sample-data/` dan
    `sample-data/holdout/` (holdout pertama kini set pengembangan, bukan
    uji independen).
-4. `2e50260` / `dc480c3`: perbaikan dan pelaporan dibekukan.
+4. `f299cd0` / `dc480c3`: perbaikan dan pelaporan dibekukan.
 5. Holdout2 dijalankan dengan kode final. Run pertama dibatalkan oleh
    pengaman PII eval sebelum laporan ditulis (nilai field non-NIK belum
    disamarkan di laporan eval; diperbaiki di `fix(eval)`, tanpa perubahan
