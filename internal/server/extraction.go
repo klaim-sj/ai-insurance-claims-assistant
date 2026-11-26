@@ -26,6 +26,8 @@ type documentResultData struct {
 	CanProcess  bool
 	ErrorLabel  string
 	High, Min   float64
+	// Page: halaman yang disorot (tautan evidence temuan); 0 bila tidak ada.
+	Page int
 }
 
 func docIDParam(r *http.Request) (int64, bool) {
@@ -66,6 +68,10 @@ func (s *Server) documentResult(w http.ResponseWriter, r *http.Request) {
 		CanProcess: authz.Can(u.Role, authz.PermDocumentsProcess) && det.Status != claims.StatusClosed && res.Final(),
 		ErrorLabel: documents.ErrorLabel(res.ErrorCode),
 		High:       extraction.HighConfidence, Min: extraction.MinConfidence,
+	}
+	// ?hal=N: tautan evidence temuan ke halaman tertentu.
+	if n, err := strconv.Atoi(r.URL.Query().Get("hal")); err == nil && n > 0 && n <= 1000 {
+		data.Page = n
 	}
 	s.render(w, r, http.StatusOK, "document_result", pageData{
 		Title: fmt.Sprintf("Dokumen #%d · %s", res.ID, det.Claim.ClaimNumber), Active: "/claims", Data: data,

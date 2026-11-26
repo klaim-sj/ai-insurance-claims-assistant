@@ -26,24 +26,52 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/extraction"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/ocr"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/pii"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/validation"
 )
 
 type expectedFile struct {
 	DocumentType string                     `json:"document_type"`
 	MIMEType     string                     `json:"mime_type"`
 	Fields       map[string]json.RawMessage `json:"fields"`
+	// ExpectedUnreadable: dokumen sengaja dibuat tidak terbaca; field-nya
+	// tidak masuk akurasi (benar bila sistem tidak menebak).
+	ExpectedUnreadable bool `json:"expected_unreadable"`
+}
+
+type expectedEvidence struct {
+	File   string `json:"file"`
+	Source string `json:"source"`
+	Field  string `json:"field"`
+}
+
+type expectedFinding struct {
+	Code     string             `json:"code"`
+	Evidence []expectedEvidence `json:"evidence"`
+}
+
+type scenario struct {
+	ID               string            `json:"id"`
+	Title            string            `json:"title"`
+	Upload           []string          `json:"upload"`
+	ExpectedFindings []expectedFinding `json:"expected_findings"`
+	// Claim: data klaim khusus skenario; kosong berarti claim global.
+	Claim *claimRecord `json:"claim"`
+}
+
+type claimRecord struct {
+	PolicyNumber string `json:"policy_number"`
+	ClaimantName string `json:"claimant_name"`
+	ProductType  string `json:"product_type"`
+	ReceivedAt   string `json:"received_at"`
 }
 
 type expectedDoc struct {
-	Files     map[string]expectedFile `json:"files"`
-	Scenarios []struct {
-		ExpectedFindings []struct {
-			Code     string `json:"code"`
-			Evidence []struct {
-				File string `json:"file"`
-			} `json:"evidence"`
-		} `json:"expected_findings"`
-	} `json:"scenarios"`
+	Claim claimRecord `json:"claim"`
+	// EvaluationDate: tanggal "hari ini" untuk aturan tanggal masa depan
+	// (deterministik); default claim.received_at.
+	EvaluationDate string                  `json:"evaluation_date"`
+	Files          map[string]expectedFile `json:"files"`
+	Scenarios      []scenario              `json:"scenarios"`
 }
 
 // groundTruthKey memetakan field expected.json ke field ekstraksi per
@@ -105,6 +133,7 @@ type fieldSummary struct {
 
 type modeReport struct {
 	Mode            string         `json:"mode"`
+	Findings        findingsReport `json:"findings"`
 	Files           []fileResult   `json:"files"`
 	Summary         []fieldSummary `json:"summary"`
 	OverallAccuracy float64        `json:"overall_accuracy"`
@@ -118,6 +147,10 @@ type modeReport struct {
 }
 
 type report struct {
+	Dataset          string       `json:"dataset"`
+	Samples          string       `json:"samples"`
+	Holdout          bool         `json:"holdout"`
+	RuleVersions     []string     `json:"rule_versions"`
 	GeneratedAt      string       `json:"generated_at"`
 	ExtractorVersion string       `json:"extractor_version"`
 	Engines          [2]string    `json:"engine_versions"`
@@ -129,14 +162,16 @@ func main() {
 	samples := flag.String("samples", "sample-data", "direktori dokumen sintetis")
 	out := flag.String("out", "docs/eval", "direktori laporan")
 	timeout := flag.Duration("timeout", 60*time.Second, "batas waktu per pemanggilan binary OCR")
+	dataset := flag.String("dataset", "utama", "nama dataset di laporan")
+	holdout := flag.Bool("holdout", false, "dataset holdout (tidak dipakai menyetel aturan)")
 	flag.Parse()
-	if err := run(*samples, *out, *timeout); err != nil {
+	if err := run(*samples, *out, *dataset, *holdout, *timeout); err != nil {
 		fmt.Fprintln(os.Stderr, "eval gagal:", err)
 		os.Exit(1)
 	}
 }
 
-func run(samples, outDir string, timeout time.Duration) error {
+func run(samples, outDir, dataset string, holdout bool, timeout time.Duration) error {
 	raw, err := os.ReadFile(filepath.Join(samples, "expected.json"))
 	if err != nil {
 		return err
@@ -146,14 +181,8 @@ func run(samples, outDir string, timeout time.Duration) error {
 		return fmt.Errorf("expected.json: %w", err)
 	}
 	unreadable := map[string]bool{}
-	for _, sc := range exp.Scenarios {
-		for _, f := range sc.ExpectedFindings {
-			if f.Code == "DOCUMENT_UNREADABLE" {
-				for _, ev := range f.Evidence {
-					unreadable[ev.File] = true
-				}
-			}
-		}
+	for n, f := range exp.Files {
+		unreadable[n] = f.ExpectedUnreadable
 	}
 
 	ctx := context.Background()
@@ -169,7 +198,9 @@ func run(samples, outDir string, timeout time.Duration) error {
 	}
 	sort.Strings(names)
 
+	rules := validation.DefaultRules()
 	rep := report{
+		Dataset: dataset, Samples: filepath.ToSlash(samples), Holdout: holdout,
 		GeneratedAt:      time.Now().UTC().Format(time.RFC3339),
 		ExtractorVersion: extraction.Version,
 		Engines: [2]string{
@@ -178,20 +209,29 @@ func run(samples, outDir string, timeout time.Duration) error {
 		},
 		Thresholds: [2]float64{extraction.HighConfidence, extraction.MinConfidence},
 	}
+	for _, r := range rules {
+		rep.RuleVersions = append(rep.RuleVersions, fmt.Sprintf("%s v%d", r.Code, r.Version))
+	}
 	for _, m := range []struct {
 		name string
 		eng  *ocr.Exec
 	}{{"standar", std}, {"scan", scan}} {
 		mr := modeReport{Mode: m.name}
-		for _, n := range names {
-			fr, err := evalFile(ctx, m.eng, filepath.Join(samples, n), n, exp.Files[n], unreadable[n])
+		docs := map[string]validation.Document{}
+		for i, n := range names {
+			fr, vd, err := evalFile(ctx, m.eng, filepath.Join(samples, n), n, exp.Files[n], unreadable[n])
 			if err != nil {
 				return err
 			}
+			vd.ID = int64(i + 1)
+			docs[n] = vd
 			mr.Files = append(mr.Files, fr)
 			mr.TotalMS += fr.DurationMS
 		}
 		summarize(&mr)
+		if mr.Findings, err = evalFindings(exp, names, docs, rules); err != nil {
+			return err
+		}
 		rep.Modes = append(rep.Modes, mr)
 	}
 
@@ -214,18 +254,20 @@ func run(samples, outDir string, timeout time.Duration) error {
 		return err
 	}
 	for _, m := range rep.Modes {
-		fmt.Printf("[%s] akurasi %.1f%% (%d field), uncertain %d, not_found %d, salah %d, waktu %d ms\n",
-			m.Mode, m.OverallAccuracy*100, m.TotalFields, m.UncertainCount, m.NotFoundCount, m.WrongCount, m.TotalMS)
+		fmt.Printf("[%s/%s] akurasi field %.1f%% (%d field), uncertain %d, not_found %d, salah %d, waktu %d ms\n",
+			dataset, m.Mode, m.OverallAccuracy*100, m.TotalFields, m.UncertainCount, m.NotFoundCount, m.WrongCount, m.TotalMS)
+		fmt.Printf("[%s/%s] temuan: %s\n", dataset, m.Mode, m.Findings.oneLine())
 	}
 	fmt.Printf("laporan: %s\n", filepath.Join(outDir, "report.md"))
 	return nil
 }
 
-func evalFile(ctx context.Context, eng *ocr.Exec, path, name string, ef expectedFile, unreadable bool) (fileResult, error) {
+func evalFile(ctx context.Context, eng *ocr.Exec, path, name string, ef expectedFile, unreadable bool) (fileResult, validation.Document, error) {
 	fr := fileResult{File: name, Type: ef.DocumentType, Unreadable: unreadable}
+	vd := validation.Document{Type: ef.DocumentType, Status: "completed"}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return fr, err
+		return fr, vd, err
 	}
 	start := time.Now()
 	res, err := eng.Process(ctx, data, ef.MIMEType)
@@ -240,6 +282,18 @@ func evalFile(ctx context.Context, eng *ocr.Exec, path, name string, ef expected
 		if fr.Error == "" {
 			fr.Error = "ERROR"
 		}
+		vd.Status = "failed"
+	}
+	vd.PageCount = len(res.Pages)
+	for _, p := range res.Pages {
+		vd.Pages = append(vd.Pages, validation.Page{Number: p.Number, Engine: p.Engine, MeanConfidence: p.MeanConfidence, WordCount: p.WordCount})
+	}
+	for _, f := range fields {
+		// Penyamaran sama dengan worker sebelum field disimpan.
+		vd.Fields = append(vd.Fields, validation.Field{
+			Key: string(f.Key), Value: pii.MaskNIK(f.Value), Status: string(f.Status),
+			Confidence: f.Confidence, Page: f.Page, Excerpt: pii.MaskNIK(f.Excerpt),
+		})
 	}
 	for _, p := range res.Pages {
 		fr.Engines = append(fr.Engines, p.Engine)
@@ -285,7 +339,7 @@ func evalFile(ctx context.Context, eng *ocr.Exec, path, name string, ef expected
 		}
 		fr.Fields = append(fr.Fields, r)
 	}
-	return fr, nil
+	return fr, vd, nil
 }
 
 func normalizeExpected(k extraction.Key, raw json.RawMessage) string {
@@ -364,18 +418,25 @@ func roundTo(v float64, d int) float64 {
 
 func markdown(rep report) string {
 	var b strings.Builder
-	b.WriteString("# Evaluasi OCR & ekstraksi field (Tahap 4)\n\n")
-	b.WriteString("> Dataset: `sample-data/` (SELURUHNYA SINTETIS). Hasil ekstraksi adalah bahan\n")
-	b.WriteString("> verifikasi petugas, bukan keputusan klaim. NIK hanya ditampilkan tersamar.\n\n")
+	fmt.Fprintf(&b, "# Evaluasi OCR, ekstraksi field, dan temuan — dataset %s\n\n", rep.Dataset)
+	fmt.Fprintf(&b, "> Dataset: `%s/` (SELURUHNYA SINTETIS). Hasil ekstraksi dan temuan adalah bahan\n", rep.Samples)
+	b.WriteString("> verifikasi petugas (\"perlu ditinjau\"), bukan keputusan klaim. NIK hanya ditampilkan tersamar.\n\n")
+	if rep.Holdout {
+		b.WriteString("**Set holdout**: dokumen di set ini dibuat dengan tata letak, font, kemiringan, dan noise berbeda dan **tidak dipakai untuk menyetel** aturan ekstraksi maupun aturan validasi. Aturan dibekukan sebelum set ini dijalankan pertama kali; angka di bawah dilaporkan apa adanya.\n\n")
+	}
 	fmt.Fprintf(&b, "- Dibuat: %s\n", rep.GeneratedAt)
 	fmt.Fprintf(&b, "- Extractor: `%s`; engine: %s, %s\n", rep.ExtractorVersion, rep.Engines[0], rep.Engines[1])
+	fmt.Fprintf(&b, "- Aturan validasi: %s\n", strings.Join(rep.RuleVersions, ", "))
 	fmt.Fprintf(&b, "- Ambang confidence: tinggi ≥ %.0f, perlu verifikasi ≥ %.0f, di bawahnya rendah (uncertain)\n", rep.Thresholds[0], rep.Thresholds[1])
-	b.WriteString("- Akurasi = field `found` dengan nilai tepat ÷ field yang punya ground truth. `uncertain`/`not_found` dihitung tidak tepat (tidak menebak, tetapi perlu diperiksa manual).\n")
-	b.WriteString("- Dokumen yang memang dibuat tidak terbaca (skenario d) tidak masuk akurasi; dihitung terpisah: benar bila sistem tidak menebak.\n\n")
+	b.WriteString("- Akurasi field = field `found` dengan nilai tepat ÷ field yang punya ground truth. `uncertain`/`not_found` dihitung tidak tepat (tidak menebak, tetapi perlu diperiksa manual).\n")
+	b.WriteString("- Dokumen yang sengaja dibuat tidak terbaca (`expected_unreadable`) tidak masuk akurasi; dihitung terpisah: benar bila sistem tidak menebak.\n")
+	b.WriteString("- Temuan: rule engine dijalankan per skenario. Satuan hitung = (skenario, finding_code): TP bila kode diharapkan dan muncul, FP bila muncul tanpa diharapkan, FN bila diharapkan tetapi tidak muncul. Evidence lengkap = TP yang evidence-nya merujuk semua file sumber yang disebut `expected.json`.\n\n")
 	b.WriteString("Mode **standar** = alur aplikasi (lapisan teks PDF, Tesseract untuk gambar/halaman tanpa teks). Mode **scan** = setiap halaman PDF dirender 300 dpi lalu dibaca Tesseract (simulasi dokumen hasil scan).\n\n")
 
 	for _, m := range rep.Modes {
 		fmt.Fprintf(&b, "## Mode %s\n\n", m.Mode)
+		findingsMarkdown(&b, m.Findings)
+		b.WriteString("### Ekstraksi field\n\n")
 		fmt.Fprintf(&b, "Akurasi keseluruhan **%.1f%%** (%d field) · uncertain %d · not_found %d · salah baca %d · dokumen tidak terbaca: tidak menebak %d / menebak %d · total waktu %d ms\n\n",
 			m.OverallAccuracy*100, m.TotalFields, m.UncertainCount, m.NotFoundCount, m.WrongCount, m.UnreadableOK, m.UnreadableBad, m.TotalMS)
 		b.WriteString("| Field | Total | Benar | Salah | Uncertain | Not found | Akurasi |\n|---|---:|---:|---:|---:|---:|---:|\n")
@@ -387,7 +448,7 @@ func markdown(rep report) string {
 			var outs []string
 			for _, r := range f.Fields {
 				o := r.Field + "=" + r.Outcome
-				if r.Outcome == outWrong {
+				if r.Outcome == outWrong && r.Field != string(extraction.KeyNIK) {
 					o += fmt.Sprintf(" (dapat %q, harap %q)", r.Got, r.Expected)
 				}
 				outs = append(outs, o)
@@ -405,8 +466,13 @@ func markdown(rep report) string {
 		b.WriteString("\n")
 	}
 	b.WriteString("## Catatan\n\n")
-	b.WriteString("- **Batas validitas**: dataset hanya 8 file sintetis dari satu generator dengan tata letak rapi, dan aturan ekstraksi (label, PSM Tesseract, ambang) disetel memakai file yang sama. Akurasi tinggi di sini **tidak** mewakili dokumen nyata (tulisan tangan, foto miring, tata letak beragam). Perlu dataset uji terpisah yang lebih representatif.\n")
-	b.WriteString("- `document_date` formulir dan surat keterangan tidak punya ground truth di `expected.json`, sehingga tidak dihitung.\n")
+	if rep.Holdout {
+		b.WriteString("- Set holdout kecil (puluhan field, beberapa skenario); satu dokumen dapat menggeser persentase secara besar. Gunakan sebagai sinyal arah, bukan ukuran kinerja produksi.\n")
+		b.WriteString("- Kegagalan di sini sengaja **tidak** diperbaiki dengan menyetel aturan pada set yang sama; perbaikan harus divalidasi pada set uji baru.\n")
+	} else {
+		b.WriteString("- **Batas validitas**: dataset utama berasal dari satu generator dengan tata letak rapi, dan aturan ekstraksi/validasi disetel memakai file yang sama. Angka tinggi di sini **tidak** mewakili dokumen nyata. Lihat laporan holdout (`docs/eval/holdout/report.md`) untuk set yang tidak dipakai menyetel.\n")
+		b.WriteString("- `document_date` formulir dan surat keterangan tidak punya ground truth di `expected.json`, sehingga tidak dihitung.\n")
+	}
 	b.WriteString("- Ambang confidence adalah nilai awal prototipe; perlu diuji ulang pada dataset yang lebih representatif.\n")
 	b.WriteString("- Laporan dibuat ulang dengan `make eval`.\n")
 	return b.String()

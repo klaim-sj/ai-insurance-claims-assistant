@@ -43,7 +43,7 @@
     <h2 id="preview-heading" class="text-base font-semibold">Pratinjau</h2>
     <div class="mt-3">
       {{if eq .R.MIME "application/pdf"}}
-      <iframe src="/claims/{{.ClaimID}}/documents/{{.R.ID}}?embed=1" title="Pratinjau dokumen #{{.R.ID}}" class="h-[70vh] w-full rounded border border-slate-200"></iframe>
+      <iframe src="/claims/{{.ClaimID}}/documents/{{.R.ID}}?embed=1{{if .Page}}#page={{.Page}}{{end}}" title="Pratinjau dokumen #{{.R.ID}}" class="h-[70vh] w-full rounded border border-slate-200"></iframe>
       {{else}}
       <img src="/claims/{{.ClaimID}}/documents/{{.R.ID}}?embed=1" alt="Pratinjau dokumen #{{.R.ID}} ({{docTypeLabel .R.Type}})" class="max-h-[70vh] w-full rounded border border-slate-200 object-contain">
       {{end}}
@@ -105,8 +105,8 @@
       <h2 id="ocr-heading" class="text-base font-semibold">Hasil OCR per halaman</h2>
       <ul class="mt-3 space-y-3 text-sm">
         {{range .R.OCR}}
-        <li>
-          <details class="rounded border border-slate-200 p-2">
+        <li id="hal-{{.Number}}">
+          <details class="rounded border p-2 {{if eq .Number $.Data.Page}}border-indigo-400 ring-1 ring-indigo-300{{else}}border-slate-200{{end}}"{{if eq .Number $.Data.Page}} open{{end}}>
             <summary class="cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
               Halaman {{.Number}} · {{.Engine}} {{.EngineVersion}} · {{.WordCount}} kata · confidence rata-rata {{pct .MeanConfidence}}
             </summary>

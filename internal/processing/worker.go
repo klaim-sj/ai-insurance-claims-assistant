@@ -18,6 +18,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/extraction"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/ocr"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/pii"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/validation"
 )
 
 // Kode error di luar OCR.
@@ -38,6 +39,9 @@ type Worker struct {
 	storage *documents.Storage
 	engine  ocr.Engine
 	log     *slog.Logger
+	// validationQueue: bila diisi, job validasi klaim dimasukkan setelah
+	// dokumen terakhir klaim selesai diproses (berhasil atau gagal final).
+	validationQueue validation.Queue
 
 	// RetryBase: jeda sebelum percobaan kedua; percobaan berikutnya ×4
 	// (10 dtk, 40 dtk). Dapat diperkecil di test.
@@ -55,6 +59,27 @@ func NewWorker(pool *pgxpool.Pool, storage *documents.Storage, engine ocr.Engine
 		pool: pool, q: db.New(pool), storage: storage, engine: engine, log: logger,
 		RetryBase: 10 * time.Second, JobTimeout: 10 * time.Minute,
 	}
+}
+
+// SetValidationQueue memasang antrean validasi (Tahap 5).
+func (w *Worker) SetValidationQueue(q validation.Queue) { w.validationQueue = q }
+
+// maybeEnqueueValidation memasukkan job validasi bila seluruh dokumen klaim
+// sudah selesai diproses. Baris klaim dikunci lebih dulu agar dua dokumen
+// yang selesai bersamaan tidak sama-sama melihat dokumen lain belum selesai
+// (sehingga tidak ada yang memicu validasi).
+func (w *Worker) maybeEnqueueValidation(ctx context.Context, tx pgx.Tx, q *db.Queries, claimID int64) error {
+	if w.validationQueue == nil {
+		return nil
+	}
+	if _, err := q.GetClaimForUpdate(ctx, claimID); err != nil {
+		return err
+	}
+	n, err := q.CountUnfinishedDocuments(ctx, claimID)
+	if err != nil || n > 0 {
+		return err
+	}
+	return w.validationQueue.EnqueueValidationTx(ctx, tx, claimID, validation.TriggerDocumentsProcessed)
 }
 
 // NextRetry: backoff eksponensial terbatas.
@@ -135,7 +160,20 @@ func (w *Worker) Work(ctx context.Context, job *river.Job[ProcessClaimDocumentAr
 	// Catat kegagalan walau ctx job sudah dibatalkan/timeout.
 	bg := context.WithoutCancel(ctx)
 	if final {
-		err = w.q.MarkDocumentFailed(bg, db.MarkDocumentFailedParams{ID: docID, ErrorCode: je.code})
+		err = pgx.BeginFunc(bg, w.pool, func(tx pgx.Tx) error {
+			q := w.q.WithTx(tx)
+			if w.validationQueue != nil {
+				// Kunci klaim sebelum baris dokumen (urutan kunci sama
+				// dengan jalur sukses).
+				if _, err := q.GetClaimForUpdate(bg, doc.ClaimID); err != nil {
+					return err
+				}
+			}
+			if err := q.MarkDocumentFailed(bg, db.MarkDocumentFailedParams{ID: docID, ErrorCode: je.code}); err != nil {
+				return err
+			}
+			return w.maybeEnqueueValidation(bg, tx, q, doc.ClaimID)
+		})
 	} else {
 		err = w.q.MarkDocumentRetrying(bg, db.MarkDocumentRetryingParams{ID: docID, ErrorCode: je.code})
 	}
@@ -183,6 +221,12 @@ func (w *Worker) process(ctx context.Context, doc db.ClaimDocument, attempt int,
 	var engineList []string
 	err = pgx.BeginFunc(ctx, w.pool, func(tx pgx.Tx) error {
 		q := w.q.WithTx(tx)
+		if w.validationQueue != nil {
+			// Kunci klaim lebih dulu (lihat maybeEnqueueValidation).
+			if _, err := q.GetClaimForUpdate(ctx, doc.ClaimID); err != nil {
+				return err
+			}
+		}
 		if err := q.DeleteOCRResults(ctx, doc.ID); err != nil {
 			return err
 		}
@@ -233,6 +277,9 @@ func (w *Worker) process(ctx context.Context, doc db.ClaimDocument, attempt int,
 		}
 		if err := q.MarkDocumentCompleted(ctx, doc.ID); err != nil {
 			return err
+		}
+		if err := w.maybeEnqueueValidation(ctx, tx, q, doc.ClaimID); err != nil {
+			return fmt.Errorf("antrekan validasi: %w", err)
 		}
 		return w.audit(ctx, q, doc, audit.ActionDocumentProcessingCompleted, map[string]any{
 			"attempt": attempt, "page_count": len(res.Pages), "engines": engineList,

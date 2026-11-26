@@ -15,12 +15,14 @@ import (
 
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/audit"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/auth"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/config"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/db"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/ocr"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/processing"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/server"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/validation"
 )
 
 // Batas percobaan login per IP: 5 percobaan sekaligus, lalu 1 per 12 detik
@@ -73,6 +75,8 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	docSvc := documents.NewService(pool, storage, logger)
+	claimSvc := claims.NewService(pool, logger)
+	valSvc := validation.NewService(pool, claimSvc, logger)
 
 	// Queue River: job ProcessClaimDocument dimasukkan saat unggah/proses
 	// ulang. Worker (OCR + ekstraksi) berjalan di proses ini bila diaktifkan.
@@ -85,6 +89,8 @@ func run(logger *slog.Logger) error {
 			logger.Warn("alat OCR belum lengkap; pemrosesan dokumen akan gagal", "error_code", string(ocr.CodeOf(err)))
 		}
 		clientCfg.Worker = processing.NewWorker(pool, storage, engine, logger)
+		// Validasi aturan (Tahap 5) otomatis setelah semua dokumen klaim selesai.
+		clientCfg.Validator = validation.NewWorker(valSvc)
 	}
 	queue, err := processing.NewClient(pool, clientCfg)
 	if err != nil {
@@ -107,7 +113,9 @@ func run(logger *slog.Logger) error {
 	srv, err := server.New(server.Options{
 		Config:                 cfg,
 		Pool:                   pool,
+		Claims:                 claimSvc,
 		Documents:              docSvc,
+		Validation:             valSvc,
 		Queue:                  queue.Queue,
 		Auth:                   authSvc,
 		Audit:                  auditLog,

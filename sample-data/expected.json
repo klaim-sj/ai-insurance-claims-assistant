@@ -106,6 +106,7 @@
         "birth_place_date": "Kota Demo, 01-01-1990",
         "address": "Jl. Contoh Fiktif No. 1, Kota Demo"
       },
+      "expected_unreadable": true,
       "note": "Nilai field adalah isi sebenarnya sebelum diburamkan. Sistem TIDAK boleh menebak; field diharapkan tidak terbaca atau confidence rendah."
     },
     "e_kuitansi_tanggal_sebelum_kejadian.pdf": {
@@ -147,7 +148,7 @@
       ],
       "expected_findings": [
         {
-          "code": "CROSS_DOC_NAME_MISMATCH",
+          "code": "NAME_MISMATCH",
           "category": "konsistensi_antardokumen",
           "status": "perlu_ditinjau",
           "description": "Nama pada formulir klaim berbeda dari nama pada dokumen identitas.",
@@ -182,7 +183,7 @@
       ],
       "expected_findings": [
         {
-          "code": "POLICY_NUMBER_MISMATCH",
+          "code": "POLICY_MISMATCH",
           "category": "konsistensi_data_klaim",
           "status": "perlu_ditinjau",
           "description": "Nomor polis pada formulir klaim berbeda dari nomor polis pada data klaim.",
@@ -216,7 +217,7 @@
       ],
       "expected_findings": [
         {
-          "code": "DOCUMENT_UNREADABLE",
+          "code": "LOW_QUALITY_DOCUMENT",
           "category": "kualitas_dokumen",
           "status": "perlu_ditinjau",
           "description": "Dokumen identitas buram sehingga field tidak dapat dibaca dengan andal.",
@@ -227,6 +228,28 @@
               "field": null,
               "value": null,
               "signal": "confidence OCR rendah / teks tidak terbaca"
+            }
+          ]
+        },
+        {
+          "code": "MISSING_FIELD",
+          "category": "kelengkapan_field",
+          "status": "perlu_ditinjau",
+          "description": "Field wajib identitas (nama, NIK) tidak terbaca dengan pasti.",
+          "evidence": [
+            {
+              "file": "d_identitas_buram.png",
+              "page": 1,
+              "field": "full_name",
+              "value": null,
+              "signal": "uncertain"
+            },
+            {
+              "file": "d_identitas_buram.png",
+              "page": 1,
+              "field": "nik",
+              "value": null,
+              "signal": "uncertain"
             }
           ]
         }
@@ -247,7 +270,7 @@
       ],
       "expected_findings": [
         {
-          "code": "RECEIPT_DATE_BEFORE_INCIDENT",
+          "code": "DATE_INCONSISTENCY",
           "category": "konsistensi_tanggal",
           "status": "perlu_ditinjau",
           "description": "Tanggal kuitansi lebih awal dari tanggal kejadian/masuk perawatan.",
@@ -275,6 +298,33 @@
       ],
       "suggested_followup": [
         "Konfirmasi tanggal kuitansi ke fasilitas kesehatan; minta kuitansi yang sesuai bila salah ketik."
+      ]
+    },
+    {
+      "id": "f",
+      "title": "Kuitansi belum diunggah",
+      "upload": [
+        "01_formulir_klaim.pdf",
+        "02_identitas.png",
+        "03_surat_keterangan_medis.pdf"
+      ],
+      "expected_findings": [
+        {
+          "code": "MISSING_DOCUMENT",
+          "category": "kelengkapan_dokumen",
+          "status": "perlu_ditinjau",
+          "description": "Dokumen wajib kuitansi belum ada pada klaim.",
+          "evidence": [
+            {
+              "source": "checklist",
+              "field": "document_type",
+              "value": "kuitansi"
+            }
+          ]
+        }
+      ],
+      "suggested_followup": [
+        "Minta peserta mengunggah kuitansi (status 'Perlu dokumen' hanya bila petugas setuju)."
       ]
     }
   ]

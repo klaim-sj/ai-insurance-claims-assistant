@@ -1,5 +1,16 @@
 {
-  "generated_at": "2026-11-26T05:10:38Z",
+  "dataset": "utama",
+  "samples": "sample-data",
+  "holdout": false,
+  "rule_versions": [
+    "MISSING_DOCUMENT v1",
+    "MISSING_FIELD v1",
+    "NAME_MISMATCH v1",
+    "POLICY_MISMATCH v1",
+    "DATE_INCONSISTENCY v1",
+    "LOW_QUALITY_DOCUMENT v1"
+  ],
+  "generated_at": "2026-11-26T07:18:51Z",
   "extractor_version": "rules-v1",
   "engine_versions": [
     "pdftotext 24.02.0",
@@ -12,6 +23,172 @@
   "modes": [
     {
       "mode": "standar",
+      "findings": {
+        "scenarios": [
+          {
+            "id": "a",
+            "title": "Set lengkap dan konsisten",
+            "expected": null,
+            "predicted": null,
+            "instances": {},
+            "false_positive": null,
+            "false_negative": null,
+            "details": null
+          },
+          {
+            "id": "b",
+            "title": "Nama di formulir berbeda dengan identitas",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "NAME_MISMATCH": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "NAME_MISMATCH [medium] ← b_formulir_klaim_nama_beda.pdf hal.1 claimant_name | 02_identitas.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "c",
+            "title": "Nomor polis di formulir berbeda dengan data klaim",
+            "expected": [
+              "POLICY_MISMATCH"
+            ],
+            "predicted": [
+              "POLICY_MISMATCH"
+            ],
+            "instances": {
+              "POLICY_MISMATCH": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "POLICY_MISMATCH [medium] ← c_formulir_klaim_polis_beda.pdf hal.1 policy_number | claim_record:policy_number"
+            ]
+          },
+          {
+            "id": "d",
+            "title": "Gambar identitas sengaja buram",
+            "expected": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 2
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 claimant_name",
+              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 nik",
+              "LOW_QUALITY_DOCUMENT [high] ← d_identitas_buram.png hal.1"
+            ]
+          },
+          {
+            "id": "e",
+            "title": "Tanggal kuitansi sebelum tanggal kejadian",
+            "expected": [
+              "DATE_INCONSISTENCY"
+            ],
+            "predicted": [
+              "DATE_INCONSISTENCY"
+            ],
+            "instances": {
+              "DATE_INCONSISTENCY": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "DATE_INCONSISTENCY [medium] ← e_kuitansi_tanggal_sebelum_kejadian.pdf hal.1 document_date | 01_formulir_klaim.pdf hal.1 event_date | 03_surat_keterangan_medis.pdf hal.1 event_date"
+            ]
+          },
+          {
+            "id": "f",
+            "title": "Kuitansi belum diunggah",
+            "expected": [
+              "MISSING_DOCUMENT"
+            ],
+            "predicted": [
+              "MISSING_DOCUMENT"
+            ],
+            "instances": {
+              "MISSING_DOCUMENT": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type"
+            ]
+          }
+        ],
+        "per_code": [
+          {
+            "code": "MISSING_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "MISSING_FIELD",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "NAME_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "POLICY_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "DATE_INCONSISTENCY",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "LOW_QUALITY_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          }
+        ],
+        "tp": 6,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp_evidence_complete": 6,
+        "invalid_findings": 0
+      },
       "files": [
         {
           "file": "01_formulir_klaim.pdf",
@@ -23,7 +200,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 7,
+          "duration_ms": 9,
           "fields": [
             {
               "field": "claimant_name",
@@ -77,7 +254,7 @@
           "page_mean_confidence": [
             86.85
           ],
-          "duration_ms": 271,
+          "duration_ms": 312,
           "fields": [
             {
               "field": "claimant_name",
@@ -107,7 +284,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 14,
+          "duration_ms": 10,
           "fields": [
             {
               "field": "claimant_name",
@@ -137,7 +314,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 7,
+          "duration_ms": 13,
           "fields": [
             {
               "field": "claimant_name",
@@ -175,7 +352,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 7,
+          "duration_ms": 11,
           "fields": [
             {
               "field": "claimant_name",
@@ -229,7 +406,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 10,
+          "duration_ms": 11,
           "fields": [
             {
               "field": "claimant_name",
@@ -283,7 +460,7 @@
           "page_mean_confidence": [
             27.08
           ],
-          "duration_ms": 391,
+          "duration_ms": 430,
           "fields": [
             {
               "field": "claimant_name",
@@ -311,7 +488,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 9,
+          "duration_ms": 10,
           "fields": [
             {
               "field": "claimant_name",
@@ -403,10 +580,176 @@
       "wrong_count": 0,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 716
+      "total_ms": 806
     },
     {
       "mode": "scan",
+      "findings": {
+        "scenarios": [
+          {
+            "id": "a",
+            "title": "Set lengkap dan konsisten",
+            "expected": null,
+            "predicted": null,
+            "instances": {},
+            "false_positive": null,
+            "false_negative": null,
+            "details": null
+          },
+          {
+            "id": "b",
+            "title": "Nama di formulir berbeda dengan identitas",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "NAME_MISMATCH": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "NAME_MISMATCH [medium] ← b_formulir_klaim_nama_beda.pdf hal.1 claimant_name | 02_identitas.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "c",
+            "title": "Nomor polis di formulir berbeda dengan data klaim",
+            "expected": [
+              "POLICY_MISMATCH"
+            ],
+            "predicted": [
+              "POLICY_MISMATCH"
+            ],
+            "instances": {
+              "POLICY_MISMATCH": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "POLICY_MISMATCH [medium] ← c_formulir_klaim_polis_beda.pdf hal.1 policy_number | claim_record:policy_number"
+            ]
+          },
+          {
+            "id": "d",
+            "title": "Gambar identitas sengaja buram",
+            "expected": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 2
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 claimant_name",
+              "MISSING_FIELD [low] ← d_identitas_buram.png hal.1 nik",
+              "LOW_QUALITY_DOCUMENT [high] ← d_identitas_buram.png hal.1"
+            ]
+          },
+          {
+            "id": "e",
+            "title": "Tanggal kuitansi sebelum tanggal kejadian",
+            "expected": [
+              "DATE_INCONSISTENCY"
+            ],
+            "predicted": [
+              "DATE_INCONSISTENCY"
+            ],
+            "instances": {
+              "DATE_INCONSISTENCY": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "DATE_INCONSISTENCY [medium] ← e_kuitansi_tanggal_sebelum_kejadian.pdf hal.1 document_date | 01_formulir_klaim.pdf hal.1 event_date | 03_surat_keterangan_medis.pdf hal.1 event_date"
+            ]
+          },
+          {
+            "id": "f",
+            "title": "Kuitansi belum diunggah",
+            "expected": [
+              "MISSING_DOCUMENT"
+            ],
+            "predicted": [
+              "MISSING_DOCUMENT"
+            ],
+            "instances": {
+              "MISSING_DOCUMENT": 1
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type"
+            ]
+          }
+        ],
+        "per_code": [
+          {
+            "code": "MISSING_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "MISSING_FIELD",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "NAME_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "POLICY_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "DATE_INCONSISTENCY",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "LOW_QUALITY_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          }
+        ],
+        "tp": 6,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp_evidence_complete": 6,
+        "invalid_findings": 0
+      },
       "files": [
         {
           "file": "01_formulir_klaim.pdf",
@@ -418,7 +761,7 @@
           "page_mean_confidence": [
             93.51
           ],
-          "duration_ms": 1272,
+          "duration_ms": 1296,
           "fields": [
             {
               "field": "claimant_name",
@@ -472,7 +815,7 @@
           "page_mean_confidence": [
             86.85
           ],
-          "duration_ms": 310,
+          "duration_ms": 357,
           "fields": [
             {
               "field": "claimant_name",
@@ -502,7 +845,7 @@
           "page_mean_confidence": [
             94.28
           ],
-          "duration_ms": 1178,
+          "duration_ms": 1089,
           "fields": [
             {
               "field": "claimant_name",
@@ -532,7 +875,7 @@
           "page_mean_confidence": [
             93.3
           ],
-          "duration_ms": 920,
+          "duration_ms": 903,
           "fields": [
             {
               "field": "claimant_name",
@@ -570,7 +913,7 @@
           "page_mean_confidence": [
             93.35
           ],
-          "duration_ms": 1128,
+          "duration_ms": 1131,
           "fields": [
             {
               "field": "claimant_name",
@@ -624,7 +967,7 @@
           "page_mean_confidence": [
             93.55
           ],
-          "duration_ms": 1239,
+          "duration_ms": 1436,
           "fields": [
             {
               "field": "claimant_name",
@@ -678,7 +1021,7 @@
           "page_mean_confidence": [
             27.08
           ],
-          "duration_ms": 362,
+          "duration_ms": 349,
           "fields": [
             {
               "field": "claimant_name",
@@ -706,7 +1049,7 @@
           "page_mean_confidence": [
             92.74
           ],
-          "duration_ms": 1074,
+          "duration_ms": 1061,
           "fields": [
             {
               "field": "claimant_name",
@@ -798,7 +1141,7 @@
       "wrong_count": 0,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 7483
+      "total_ms": 7622
     }
   ]
 }

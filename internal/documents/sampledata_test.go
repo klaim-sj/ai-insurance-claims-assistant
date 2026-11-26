@@ -31,8 +31,8 @@ func TestSampleDataValid(t *testing.T) {
 	if err := json.Unmarshal(raw, &exp); err != nil {
 		t.Fatal(err)
 	}
-	if len(exp.Scenarios) != 5 {
-		t.Fatalf("harus ada 5 skenario, dapat %d", len(exp.Scenarios))
+	if len(exp.Scenarios) != 6 {
+		t.Fatalf("harus ada 6 skenario, dapat %d", len(exp.Scenarios))
 	}
 	for name, f := range exp.Files {
 		data, err := os.ReadFile(filepath.Join(dir, name))

@@ -20,6 +20,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/config"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/processing"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/validation"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/web"
 )
 
@@ -41,6 +42,8 @@ type Options struct {
 	Claims *claims.Service
 	// Documents opsional; bila nil dibuat dari Pool dan Config.StorageDir.
 	Documents *documents.Service
+	// Validation opsional; bila nil dibuat dari Pool dan Claims.
+	Validation *validation.Service
 	// Queue: antrean pemrosesan dokumen. Bila nil, dibuat client River
 	// insert-only dari Pool (job diproses oleh worker terpisah).
 	Queue  documents.Queue
@@ -61,6 +64,7 @@ type Server struct {
 	limiter *auth.RateLimiter
 	claims  *claims.Service
 	docs    *documents.Service
+	val     *validation.Service
 	// uploadReadTimeout: perpanjangan read deadline khusus route unggah.
 	uploadReadTimeout time.Duration
 	log               *slog.Logger
@@ -92,6 +96,9 @@ func New(o Options) (*Server, error) {
 		}
 		o.Documents = documents.NewService(o.Pool, st, o.Logger)
 	}
+	if o.Validation == nil {
+		o.Validation = validation.NewService(o.Pool, o.Claims, o.Logger)
+	}
 	if o.Queue == nil {
 		rc, err := processing.NewClient(o.Pool, processing.ClientConfig{Logger: o.Logger})
 		if err != nil {
@@ -100,6 +107,9 @@ func New(o Options) (*Server, error) {
 		o.Queue = rc.Queue
 	}
 	o.Documents.SetQueue(o.Queue)
+	if vq, ok := o.Queue.(validation.Queue); ok {
+		o.Validation.SetQueue(vq)
+	}
 	tmpl, err := parseTemplates(web.Templates())
 	if err != nil {
 		return nil, err
@@ -123,6 +133,7 @@ func New(o Options) (*Server, error) {
 		limiter: o.Limiter,
 		claims:  o.Claims,
 		docs:    o.Documents,
+		val:     o.Validation,
 
 		uploadReadTimeout: o.UploadReadTimeout,
 		log:               o.Logger,
