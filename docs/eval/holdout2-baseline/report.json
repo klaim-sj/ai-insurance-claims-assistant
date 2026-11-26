@@ -1,0 +1,1347 @@
+{
+  "dataset": "holdout2 (baseline kode Tahap 5)",
+  "samples": "sample-data/holdout2",
+  "holdout": true,
+  "rule_versions": [
+    "MISSING_DOCUMENT v1",
+    "MISSING_FIELD v1",
+    "NAME_MISMATCH v1",
+    "POLICY_MISMATCH v1",
+    "DATE_INCONSISTENCY v1",
+    "LOW_QUALITY_DOCUMENT v1"
+  ],
+  "generated_at": "2026-11-26T09:22:24Z",
+  "extractor_version": "rules-v1",
+  "engine_versions": [
+    "pdftotext 24.02.0",
+    "tesseract 5.3.4"
+  ],
+  "thresholds_high_min": [
+    85,
+    60
+  ],
+  "modes": [
+    {
+      "mode": "standar",
+      "findings": {
+        "scenarios": [
+          {
+            "id": "ga",
+            "title": "Set lengkap (foto HP, resolusi rendah, scan 2 halaman, latar warna)",
+            "expected": null,
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          },
+          {
+            "id": "gb",
+            "title": "Formulir dua kolom, nama bergelar dan disingkat",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g05_formulir_dua_kolom_nama_gelar.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g05_formulir_dua_kolom_nama_gelar.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← g05_formulir_dua_kolom_nama_gelar.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          },
+          {
+            "id": "gc",
+            "title": "Tanggal bukti bayar sebelum tanggal kejadian",
+            "expected": [
+              "DATE_INCONSISTENCY"
+            ],
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 8
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "DATE_INCONSISTENCY"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g06_bukti_bayar_tanggal_sebelum.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g06_bukti_bayar_tanggal_sebelum.png hal.1 amount"
+            ]
+          },
+          {
+            "id": "gd",
+            "title": "Nama pasien di resume medis berbeda",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9,
+              "NAME_MISMATCH": 1
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "evidence_incomplete": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g07_resume_medis_nama_beda.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount",
+              "NAME_MISMATCH [medium] ← g07_resume_medis_nama_beda.pdf hal.1 claimant_name | claim_record:claimant_name"
+            ]
+          },
+          {
+            "id": "ge",
+            "title": "Nomor polis formulir tabel berbeda",
+            "expected": [
+              "POLICY_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "POLICY_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g08_formulir_tabel_polis_beda.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g08_formulir_tabel_polis_beda.png hal.1 policy_number",
+              "MISSING_FIELD [medium] ← g08_formulir_tabel_polis_beda.png hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          },
+          {
+            "id": "gf",
+            "title": "Identitas gelap dan buram",
+            "expected": [
+              "LOW_QUALITY_DOCUMENT",
+              "NEEDS_MANUAL_VERIFICATION"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "NEEDS_MANUAL_VERIFICATION"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [low] ← g09_identitas_gelap_buram.jpg hal.1 claimant_name",
+              "MISSING_FIELD [low] ← g09_identitas_gelap_buram.jpg hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount",
+              "LOW_QUALITY_DOCUMENT [high] ← g09_identitas_gelap_buram.jpg hal.1"
+            ]
+          },
+          {
+            "id": "gg",
+            "title": "Hanya identitas dan bukti bayar",
+            "expected": [
+              "MISSING_DOCUMENT"
+            ],
+            "predicted": [
+              "MISSING_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_DOCUMENT": 2,
+              "MISSING_FIELD": 5
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          }
+        ],
+        "per_code": [
+          {
+            "code": "MISSING_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "MISSING_FIELD",
+            "tp": 0,
+            "fp": 7,
+            "fn": 0,
+            "precision": 0,
+            "recall": null
+          },
+          {
+            "code": "NAME_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1,
+            "recall": 0.5
+          },
+          {
+            "code": "POLICY_MISMATCH",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          },
+          {
+            "code": "DATE_INCONSISTENCY",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          },
+          {
+            "code": "LOW_QUALITY_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "NEEDS_MANUAL_VERIFICATION",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          }
+        ],
+        "tp": 3,
+        "fp": 7,
+        "fn": 4,
+        "precision": 0.3,
+        "recall": 0.4286,
+        "tp_evidence_complete": 2,
+        "invalid_findings": 0
+      },
+      "files": [
+        {
+          "file": "g01_formulir_foto_hp.jpg",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            79.39
+          ],
+          "duration_ms": 831,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-3315",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "got": "2026-08-16",
+              "status": "uncertain",
+              "confidence": 42.55,
+              "outcome": "uncertain"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g02_identitas_resolusi_rendah.png",
+          "document_type": "identitas",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            92.48
+          ],
+          "duration_ms": 239,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g03_resume_medis_scan_2hal.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract",
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            95.04,
+            95.09
+          ],
+          "duration_ms": 4009,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "got": "Siti Aminah Rahayu",
+              "status": "found",
+              "confidence": 96.18,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g04_bukti_bayar_latar_kuning.jpg",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            74.18
+          ],
+          "duration_ms": 411,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-08-16",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g05_formulir_dua_kolom_nama_gelar.jpg",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            94.28
+          ],
+          "duration_ms": 313,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Hj. S. Aminah Rahayu, S.E.",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-3315",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g06_bukti_bayar_tanggal_sebelum.png",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            85.99
+          ],
+          "duration_ms": 287,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-08-10",
+              "got": "2026-08-10",
+              "status": "found",
+              "confidence": 96.58,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g07_resume_medis_nama_beda.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 8,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Nurhaliza",
+              "got": "Siti Nurhaliza",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g08_formulir_tabel_polis_beda.png",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            74.2
+          ],
+          "duration_ms": 251,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-3351",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g09_identitas_gelap_buram.jpg",
+          "document_type": "identitas",
+          "expected_unreadable": true,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            16.48
+          ],
+          "duration_ms": 4119,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "uncertain",
+              "confidence": 16.475284147826095,
+              "outcome": "tidak_menebak"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "uncertain",
+              "confidence": 16.475284147826095,
+              "outcome": "tidak_menebak"
+            }
+          ]
+        }
+      ],
+      "summary": [
+        {
+          "field": "claimant_name",
+          "total": 8,
+          "correct": 2,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 6,
+          "accuracy": 0.25
+        },
+        {
+          "field": "policy_number",
+          "total": 3,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 3,
+          "accuracy": 0
+        },
+        {
+          "field": "nik",
+          "total": 4,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 4,
+          "accuracy": 0
+        },
+        {
+          "field": "event_date",
+          "total": 5,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 4,
+          "accuracy": 0
+        },
+        {
+          "field": "document_date",
+          "total": 2,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 1,
+          "accuracy": 0.5
+        },
+        {
+          "field": "amount",
+          "total": 5,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 5,
+          "accuracy": 0
+        }
+      ],
+      "overall_accuracy": 0.1111,
+      "total_fields": 27,
+      "uncertain_count": 1,
+      "not_found_count": 23,
+      "wrong_count": 0,
+      "unreadable_abstained": 2,
+      "unreadable_guessed": 0,
+      "total_ms": 10468
+    },
+    {
+      "mode": "scan",
+      "findings": {
+        "scenarios": [
+          {
+            "id": "ga",
+            "title": "Set lengkap (foto HP, resolusi rendah, scan 2 halaman, latar warna)",
+            "expected": null,
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          },
+          {
+            "id": "gb",
+            "title": "Formulir dua kolom, nama bergelar dan disingkat",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g05_formulir_dua_kolom_nama_gelar.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g05_formulir_dua_kolom_nama_gelar.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← g05_formulir_dua_kolom_nama_gelar.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          },
+          {
+            "id": "gc",
+            "title": "Tanggal bukti bayar sebelum tanggal kejadian",
+            "expected": [
+              "DATE_INCONSISTENCY"
+            ],
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 8
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "DATE_INCONSISTENCY"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g06_bukti_bayar_tanggal_sebelum.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g06_bukti_bayar_tanggal_sebelum.png hal.1 amount"
+            ]
+          },
+          {
+            "id": "gd",
+            "title": "Nama pasien di resume medis berbeda",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9,
+              "NAME_MISMATCH": 1
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "evidence_incomplete": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g07_resume_medis_nama_beda.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount",
+              "NAME_MISMATCH [medium] ← g07_resume_medis_nama_beda.pdf hal.1 claimant_name | claim_record:claimant_name"
+            ]
+          },
+          {
+            "id": "ge",
+            "title": "Nomor polis formulir tabel berbeda",
+            "expected": [
+              "POLICY_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "POLICY_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g08_formulir_tabel_polis_beda.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g08_formulir_tabel_polis_beda.png hal.1 policy_number",
+              "MISSING_FIELD [medium] ← g08_formulir_tabel_polis_beda.png hal.1 event_date",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          },
+          {
+            "id": "gf",
+            "title": "Identitas gelap dan buram",
+            "expected": [
+              "LOW_QUALITY_DOCUMENT",
+              "NEEDS_MANUAL_VERIFICATION"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 9
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": [
+              "NEEDS_MANUAL_VERIFICATION"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g01_formulir_foto_hp.jpg hal.1 policy_number",
+              "MISSING_FIELD [low] ← g01_formulir_foto_hp.jpg hal.1 event_date",
+              "MISSING_FIELD [low] ← g09_identitas_gelap_buram.jpg hal.1 claimant_name",
+              "MISSING_FIELD [low] ← g09_identitas_gelap_buram.jpg hal.1 nik",
+              "MISSING_FIELD [medium] ← g03_resume_medis_scan_2hal.pdf hal.1 event_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount",
+              "LOW_QUALITY_DOCUMENT [high] ← g09_identitas_gelap_buram.jpg hal.1"
+            ]
+          },
+          {
+            "id": "gg",
+            "title": "Hanya identitas dan bukti bayar",
+            "expected": [
+              "MISSING_DOCUMENT"
+            ],
+            "predicted": [
+              "MISSING_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_DOCUMENT": 2,
+              "MISSING_FIELD": 5
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g02_identitas_resolusi_rendah.png hal.1 nik",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 document_date",
+              "MISSING_FIELD [medium] ← g04_bukti_bayar_latar_kuning.jpg hal.1 amount"
+            ]
+          }
+        ],
+        "per_code": [
+          {
+            "code": "MISSING_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "MISSING_FIELD",
+            "tp": 0,
+            "fp": 7,
+            "fn": 0,
+            "precision": 0,
+            "recall": null
+          },
+          {
+            "code": "NAME_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1,
+            "recall": 0.5
+          },
+          {
+            "code": "POLICY_MISMATCH",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          },
+          {
+            "code": "DATE_INCONSISTENCY",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          },
+          {
+            "code": "LOW_QUALITY_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "NEEDS_MANUAL_VERIFICATION",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          }
+        ],
+        "tp": 3,
+        "fp": 7,
+        "fn": 4,
+        "precision": 0.3,
+        "recall": 0.4286,
+        "tp_evidence_complete": 2,
+        "invalid_findings": 0
+      },
+      "files": [
+        {
+          "file": "g01_formulir_foto_hp.jpg",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            79.39
+          ],
+          "duration_ms": 557,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-3315",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "got": "2026-08-16",
+              "status": "uncertain",
+              "confidence": 42.55,
+              "outcome": "uncertain"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g02_identitas_resolusi_rendah.png",
+          "document_type": "identitas",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            92.48
+          ],
+          "duration_ms": 220,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g03_resume_medis_scan_2hal.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract",
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            95.04,
+            95.09
+          ],
+          "duration_ms": 3843,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "got": "Siti Aminah Rahayu",
+              "status": "found",
+              "confidence": 96.18,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g04_bukti_bayar_latar_kuning.jpg",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            74.18
+          ],
+          "duration_ms": 419,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-08-16",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g05_formulir_dua_kolom_nama_gelar.jpg",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            94.28
+          ],
+          "duration_ms": 302,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Hj. S. Aminah Rahayu, S.E.",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-3315",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g06_bukti_bayar_tanggal_sebelum.png",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            85.99
+          ],
+          "duration_ms": 347,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-08-10",
+              "got": "2026-08-10",
+              "status": "found",
+              "confidence": 96.58,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g07_resume_medis_nama_beda.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            91.5
+          ],
+          "duration_ms": 863,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Nurhaliza",
+              "got": "Siti Nurhaliza",
+              "status": "found",
+              "confidence": 96.54,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g08_formulir_tabel_polis_beda.png",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            74.2
+          ],
+          "duration_ms": 313,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-3351",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-08-14",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "3125000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "g09_identitas_gelap_buram.jpg",
+          "document_type": "identitas",
+          "expected_unreadable": true,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            16.48
+          ],
+          "duration_ms": 3569,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Siti Aminah Rahayu",
+              "status": "uncertain",
+              "confidence": 16.475284147826095,
+              "outcome": "tidak_menebak"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0003",
+              "status": "uncertain",
+              "confidence": 16.475284147826095,
+              "outcome": "tidak_menebak"
+            }
+          ]
+        }
+      ],
+      "summary": [
+        {
+          "field": "claimant_name",
+          "total": 8,
+          "correct": 2,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 6,
+          "accuracy": 0.25
+        },
+        {
+          "field": "policy_number",
+          "total": 3,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 3,
+          "accuracy": 0
+        },
+        {
+          "field": "nik",
+          "total": 4,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 4,
+          "accuracy": 0
+        },
+        {
+          "field": "event_date",
+          "total": 5,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 4,
+          "accuracy": 0
+        },
+        {
+          "field": "document_date",
+          "total": 2,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 1,
+          "accuracy": 0.5
+        },
+        {
+          "field": "amount",
+          "total": 5,
+          "correct": 0,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 5,
+          "accuracy": 0
+        }
+      ],
+      "overall_accuracy": 0.1111,
+      "total_fields": 27,
+      "uncertain_count": 1,
+      "not_found_count": 23,
+      "wrong_count": 0,
+      "unreadable_abstained": 2,
+      "unreadable_guessed": 0,
+      "total_ms": 10433
+    }
+  ]
+}
