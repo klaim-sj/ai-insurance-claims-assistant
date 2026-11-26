@@ -36,6 +36,14 @@ const (
 	// ActionExtractedValueApplied: petugas menerapkan nilai terdeteksi ke
 	// data klaim (nilai disamarkan di audit).
 	ActionExtractedValueApplied = "extracted_value_applied"
+
+	// Tahap 5: validasi aturan. Hanya ID, kode, severity, jumlah, dan
+	// versi aturan; tidak pernah nilai field, teks OCR, atau nama.
+	ActionValidationRunRequested = "validation_run_requested"
+	ActionValidationRunStarted   = "validation_run_started"
+	ActionValidationRunCompleted = "validation_run_completed"
+	ActionFindingCreated         = "finding_created"
+	ActionFindingResolved        = "finding_resolved"
 )
 
 // Jenis entitas.
@@ -45,6 +53,8 @@ const (
 	EntityClaim = "claim"
 	// EntityDocument: entity_id adalah claim_documents.id.
 	EntityDocument = "claim_document"
+	// EntityFinding: entity_id adalah validation_findings.id.
+	EntityFinding = "validation_finding"
 )
 
 // Entry adalah satu catatan audit.

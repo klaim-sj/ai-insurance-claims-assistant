@@ -18,6 +18,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/extraction"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/validation"
 )
 
 const ctxClaimID ctxKey = 100
@@ -36,6 +37,7 @@ func (s *Server) claimRoutes(r chi.Router) {
 		r.With(s.requirePerm(authz.PermClaimsEdit)).Get("/edit", s.claimEdit)
 		r.With(s.requirePerm(authz.PermClaimsEdit)).Post("/", s.claimUpdate)
 		r.With(s.requirePerm(authz.PermClaimsTransition)).Post("/status", s.claimTransition)
+		r.With(s.requirePerm(authz.PermValidationRun)).Post("/validation", s.validationRun)
 		s.documentRoutes(r)
 	})
 }
@@ -426,6 +428,13 @@ type claimDetailData struct {
 	// Tahap 4: data terdeteksi vs data klaim.
 	Comparisons []comparisonRow
 	CanProcess  bool
+
+	// Tahap 5: temuan validasi aturan (saran tindak lanjut, bukan keputusan).
+	Findings         validation.Panel
+	CanRunValidation bool
+	// CanSuggestNeedDocuments: petugas dapat memilih "Perlu dokumen" dari
+	// status saat ini (konfirmasi tetap lewat form ubah status).
+	CanSuggestNeedDocuments bool
 }
 
 // comparisonRow adalah satu baris "data terdeteksi vs data klaim".
@@ -487,13 +496,49 @@ func (s *Server) renderDetailWith(w http.ResponseWriter, r *http.Request, status
 		}
 		data.CanProcess = authz.Can(u.Role, authz.PermDocumentsProcess) && det.Status != claims.StatusClosed
 	}
+	if data.Findings, err = s.val.Findings(ctx, a, det.Claim.ID); err != nil {
+		s.claimServiceError(w, r, err)
+		return
+	}
+	data.CanRunValidation = authz.Can(u.Role, authz.PermValidationRun) && det.Status != claims.StatusClosed &&
+		det.Status != claims.StatusDraft
+	data.CanSuggestNeedDocuments = slices.Contains(det.NextStatuses, claims.StatusNeedDocuments)
 	s.render(w, r, status, "claim_detail", pageData{
 		Title: det.Claim.ClaimNumber, Active: "/claims", Error: o.Error, Data: data,
 	})
 }
 
 func (s *Server) claimDetail(w http.ResponseWriter, r *http.Request) {
-	s.renderDetail(w, r, http.StatusOK, "", "", "")
+	// ?to=<status>: pilihan awal form ubah status (mis. dari saran temuan).
+	// Hanya mengisi pilihan; perubahan tetap harus dikirim petugas.
+	to := ""
+	if st := claims.Status(r.URL.Query().Get("to")); st.Valid() {
+		to = string(st)
+	}
+	s.renderDetail(w, r, http.StatusOK, "", to, "")
+}
+
+// validationRun memasukkan job validasi ulang. Hasil tampil setelah job
+// selesai (beberapa detik).
+func (s *Server) validationRun(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	u := userFrom(ctx)
+	id := claimIDFrom(ctx)
+	err := s.val.RequestRun(ctx, actorOf(u), id)
+	switch {
+	case errors.Is(err, validation.ErrDocumentsPending), errors.Is(err, validation.ErrClaimClosed),
+		errors.Is(err, validation.ErrQueueUnavailable):
+		s.renderDetail(w, r, http.StatusConflict, "Validasi tidak dapat dijalankan: "+err.Error()+".", "", "")
+		return
+	case errors.Is(err, validation.ErrNotFound):
+		s.notFound(w, r)
+		return
+	case err != nil:
+		s.claimServiceError(w, r, err)
+		return
+	}
+	s.sm.Put(ctx, sessFlash, "Validasi dimasukkan ke antrean. Muat ulang halaman dalam beberapa detik untuk melihat temuan terbaru.")
+	http.Redirect(w, r, fmt.Sprintf("/claims/%d#findings", id), http.StatusSeeOther)
 }
 
 func (s *Server) claimTransition(w http.ResponseWriter, r *http.Request) {

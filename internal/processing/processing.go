@@ -19,6 +19,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/validation"
 )
 
 // MaxAttempts adalah batas percobaan per permintaan pemrosesan.
@@ -63,6 +64,15 @@ func (q *Queue) EnqueueTx(ctx context.Context, tx pgx.Tx, documentID int64, queu
 	return err
 }
 
+// EnqueueValidationTx memasukkan job validasi klaim (Tahap 5).
+func (q *Queue) EnqueueValidationTx(ctx context.Context, tx pgx.Tx, claimID int64, trigger string) error {
+	_, err := q.client.InsertTx(ctx, tx, validation.NewArgs(claimID, trigger), nil)
+	return err
+}
+
+// Ensure Queue memenuhi validation.Queue.
+var _ validation.Queue = (*Queue)(nil)
+
 // Client membungkus client River.
 type Client struct {
 	River *river.Client[pgx.Tx]
@@ -73,6 +83,9 @@ type Client struct {
 type ClientConfig struct {
 	// Worker nil berarti client hanya untuk insert (tanpa memproses job).
 	Worker *Worker
+	// Validator: worker validasi klaim; wajib bila Worker diisi agar
+	// validasi otomatis berjalan setelah dokumen selesai diproses.
+	Validator *validation.Worker
 	// MaxWorkers: jumlah job paralel; default 2 (OCR berat CPU).
 	MaxWorkers int
 	Logger     *slog.Logger
@@ -92,6 +105,11 @@ func NewClient(pool *pgxpool.Pool, cfg ClientConfig) (*Client, error) {
 		if err := river.AddWorkerSafely(workers, cfg.Worker); err != nil {
 			return nil, err
 		}
+		if cfg.Validator != nil {
+			if err := river.AddWorkerSafely(workers, cfg.Validator); err != nil {
+				return nil, err
+			}
+		}
 		n := cfg.MaxWorkers
 		if n <= 0 {
 			n = 2
@@ -108,7 +126,11 @@ func NewClient(pool *pgxpool.Pool, cfg ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{River: c, Queue: &Queue{client: c}}, nil
+	out := &Client{River: c, Queue: &Queue{client: c}}
+	if cfg.Worker != nil && cfg.Validator != nil {
+		cfg.Worker.SetValidationQueue(out.Queue)
+	}
+	return out, nil
 }
 
 // Start mulai memproses job (hanya bila dibuat dengan Worker).

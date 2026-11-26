@@ -11,7 +11,17 @@ import (
 // TestSampleDataValid memastikan dokumen sintetis di sample-data/ dapat
 // diunggah (lolos validator) dan expected.json konsisten dengan file yang ada.
 func TestSampleDataValid(t *testing.T) {
-	dir := filepath.Join("..", "..", "sample-data")
+	checkSampleDir(t, filepath.Join("..", "..", "sample-data"), 6)
+}
+
+// TestHoldoutDataValid: set holdout juga harus lolos validator unggah dan
+// mematuhi aturan data sintetis.
+func TestHoldoutDataValid(t *testing.T) {
+	checkSampleDir(t, filepath.Join("..", "..", "sample-data", "holdout"), 7)
+}
+
+func checkSampleDir(t *testing.T, dir string, scenarios int) {
+	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, "expected.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -31,8 +41,8 @@ func TestSampleDataValid(t *testing.T) {
 	if err := json.Unmarshal(raw, &exp); err != nil {
 		t.Fatal(err)
 	}
-	if len(exp.Scenarios) != 5 {
-		t.Fatalf("harus ada 5 skenario, dapat %d", len(exp.Scenarios))
+	if len(exp.Scenarios) != scenarios {
+		t.Fatalf("harus ada %d skenario, dapat %d", scenarios, len(exp.Scenarios))
 	}
 	for name, f := range exp.Files {
 		data, err := os.ReadFile(filepath.Join(dir, name))

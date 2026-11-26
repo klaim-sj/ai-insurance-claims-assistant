@@ -27,7 +27,8 @@ Acuan desain: [`docs/blueprint.pdf`](docs/blueprint.pdf).
 | 2. Claim CRUD | Buat/cari/lihat/ubah klaim, transisi status, timeline, otorisasi per klaim | ✅ |
 | 3. Dokumen | Upload privat, metadata, preview, validasi file, data uji sintetis | ✅ |
 | 4. OCR & ekstraksi | Queue River, OCR (pdftotext/Tesseract), ekstraksi field deterministik, data terdeteksi vs data klaim, `make eval` | ✅ |
-| 5+ | Validasi lintas dokumen, AI summary, review, laporan | Berikutnya: 5. Validation |
+| 5. Validasi | Aturan deterministik, temuan lintas dokumen dengan evidence, job validasi otomatis, panel Temuan, precision/recall + set holdout | ✅ |
+| 6+ | AI summary, review temuan, laporan | Berikutnya: 6. AI analysis |
 
 ## Stack
 
@@ -53,7 +54,7 @@ internal/ocr      OCR via os/exec: pdftotext → pdftoppm + Tesseract (TSV → c
 internal/extraction ekstraksi field deterministik (tanpa LLM) + label confidence
 internal/processing job River ProcessClaimDocument (worker, retry, audit)
 internal/pii      penyamaran NIK
-cmd/eval          evaluasi OCR + ekstraksi pada sample-data (make eval)
+cmd/eval          evaluasi OCR + ekstraksi + temuan pada sample-data (make eval)
 internal/config   konfigurasi dari environment
 internal/db       kode hasil sqlc (jangan diedit manual)
 internal/server   router, middleware (CSRF, RBAC, header keamanan), handler
@@ -358,6 +359,73 @@ keputusan**. Status klaim tidak diubah oleh pemrosesan dokumen.
   [`docs/eval/report.md`](docs/eval/report.md) + `report.json`: akurasi per
   field, jumlah uncertain/not_found, waktu proses.
 
+## Validasi aturan & temuan (Tahap 5)
+
+Temuan adalah **dasar saran tindak lanjut untuk petugas, bukan keputusan**.
+Rule engine (`internal/validation`) deterministik, tanpa LLM, dan tidak
+pernah menyetujui/menolak klaim, menghitung manfaat, atau menyimpulkan
+kelayakan/fraud. Istilah UI: "perlu ditinjau".
+
+| Aturan (v1) | Kondisi | Severity |
+|---|---|---|
+| `MISSING_DOCUMENT` | Dokumen wajib klaim kesehatan (formulir_klaim, identitas, surat_keterangan_medis, kuitansi) belum diunggah | high |
+| `MISSING_FIELD` | Field wajib per jenis dokumen `not_found` (medium) atau `uncertain` (low) | low/medium |
+| `NAME_MISMATCH` | Nama antar dokumen / vs data klaim berbeda setelah normalisasi (huruf, spasi, tanda baca, diakritik, gelar). Inisial/nama tengah hilang = "kemungkinan singkatan" (low); selain itu "berbeda" (medium). Acuan: identitas bila terbaca, selain itu data klaim. Nama `uncertain` tidak dibandingkan | low/medium |
+| `POLICY_MISMATCH` | Nomor polis formulir ≠ data klaim (abaikan spasi/huruf besar-kecil) | medium |
+| `DATE_INCONSISTENCY` | Tanggal kuitansi sebelum tanggal kejadian/masuk, atau tanggal setelah hari ini (WIB) | medium |
+| `LOW_QUALITY_DOCUMENT` | Halaman OCR dengan confidence < 60 atau < 5 kata (lapisan teks PDF tidak dinilai) | medium; high bila semua halaman |
+
+- **Konfigurasi**: `validation_rules` (rule_code, versi, `rule_config` jsonb,
+  satu versi aktif per aturan). Seed v1 lewat migration `00012`; test menjaga
+  seed = `validation.DefaultRules()`.
+- **Evidence wajib**: setiap temuan memuat ≥1 evidence (`document`:
+  document_id + halaman + field/sinyal + nilai + kutipan ≤120 karakter;
+  `claim_record`; `checklist`). `Finding.Validate` menolak temuan tanpa
+  evidence/NIK utuh sebelum insert, dan CHECK constraint di database
+  menolaknya juga. NIK selalu `0000********1234`.
+- **Dokumen yang dinilai**: per jenis hanya dokumen terbaru yang selesai
+  diproses (unggahan ulang = pengganti); semua dokumen `lainnya`.
+- **Kapan berjalan**: job River `validate_claim` dimasukkan dalam transaksi
+  worker saat dokumen **terakhir** klaim selesai (berhasil/gagal final;
+  baris klaim dikunci agar dua dokumen yang selesai bersamaan tetap memicu
+  tepat satu validasi). Bila dokumen diunggah bertahap, validasi dapat
+  berjalan lebih dari sekali; temuan sementara (mis. `MISSING_DOCUMENT`
+  sebelum dokumen berikutnya diunggah) otomatis menjadi `resolved` pada
+  validasi berikutnya, tetapi status `needs_review` yang sudah di-set
+  tidak dikembalikan otomatis. Tombol **Jalankan ulang validasi** (izin
+  `validation.run`, dicek di middleware dan service).
+- **Idempoten**: temuan diidentifikasi `fingerprint` kondisi
+  (`UNIQUE (claim_id, fingerprint)`). Kondisi sama → baris yang sama
+  diperbarui; kondisi hilang → `resolved`; muncul lagi → dibuka kembali;
+  `dismissed` tidak diubah. Proses per klaim berjalan berurutan.
+- **Status klaim**: bila ada temuan open dan klaim `submitted`/`processing`,
+  sistem memindahkan ke `needs_review` lewat `SystemTransition`. Status
+  lain tidak disentuh. `need_documents` **tidak pernah** di-set otomatis:
+  ditampilkan sebagai saran dengan tautan yang hanya mengisi pilihan form
+  ubah status; petugas tetap mengisi alasan dan menyimpan.
+- **UI**: panel **Temuan** di detail klaim — severity, pesan netral, bukti
+  dari tiap sumber berdampingan, tautan ke halaman dokumen
+  (`…/hasil?hal=N`, pratinjau PDF dibuka di halaman itu dan teks OCR
+  halaman itu disorot), saran tindak lanjut.
+- **Audit**: `validation_run_requested/started/completed`,
+  `finding_created` (termasuk dibuka kembali), `finding_resolved` — hanya
+  ID, kode, severity, versi aturan, jumlah. Tanpa nilai field, teks OCR,
+  atau nama.
+
+### Evaluasi temuan
+
+`make eval` menjalankan rule engine per skenario `expected.json` dan
+menghitung precision/recall per `finding_code` (satuan: skenario × kode)
+serta *evidence coverage*. Dua laporan terpisah:
+
+- [`docs/eval/report.md`](docs/eval/report.md) — dataset utama
+  `sample-data/` (dipakai menyetel; angka tinggi di sini bukan ukuran
+  kinerja nyata).
+- [`docs/eval/holdout/report.md`](docs/eval/holdout/report.md) — set
+  **holdout** `sample-data/holdout/` (generator, tata letak, font,
+  kemiringan, dan noise berbeda; tidak dipakai menyetel; aturan dibekukan
+  sebelum set dibuat). Hasil dilaporkan apa adanya.
+
 ### Target Makefile
 
 | Target | Fungsi |
@@ -371,7 +439,7 @@ keputusan**. Status klaim tidak diubah oleh pemrosesan dokumen.
 | `make seed` | Seed akun demo & klaim demo |
 | `make css` | Build ulang Tailwind (CLI standalone diunduh ke `tmp/bin`) |
 | `make ocr-check` | Cek pdftotext, pdftoppm, tesseract + bahasa `ind` |
-| `make eval` | Evaluasi OCR + ekstraksi pada `sample-data/` → `docs/eval/` |
+| `make eval` | Evaluasi OCR + ekstraksi + temuan: `sample-data/` → `docs/eval/`, holdout `sample-data/holdout/` → `docs/eval/holdout/` |
 
 ### Environment variable
 
@@ -456,3 +524,13 @@ bisa, admin tidak, 20 pembuatan klaim bersamaan menghasilkan nomor unik dan
 berurutan, validasi form, audit hanya field berubah tanpa PII, filter
 (status, produk, tanggal, petugas, pencarian, input wildcard/injeksi) dan
 pagination, seed klaim idempoten.
+
+Cakupan Tahap 5: setiap aturan table-driven (termasuk normalisasi nama,
+singkatan vs berbeda, nama/tanggal uncertain tidak dibandingkan, dokumen
+pengganti), validator evidence (tanpa evidence, halaman kosong, NIK utuh,
+kutipan panjang) di service dan CHECK database, idempotensi (jalan ulang,
+resolved, dibuka kembali, dismissed tetap), `need_documents` tidak pernah
+di-set otomatis dari status mana pun, job validasi tepat sekali setelah
+dokumen terakhir, end-to-end River (unggah → OCR → temuan → `needs_review`),
+akses lintas petugas ditolak (service & HTTP), audit tanpa PII, panel UI
+tanpa istilah "ditolak"/"tidak layak".

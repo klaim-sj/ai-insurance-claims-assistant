@@ -93,7 +93,8 @@ const (
 // kebenaran; dipakai oleh service dan UI.
 //
 // processing dan needs_review hanya dapat di-set oleh sistem (pemrosesan
-// dokumen/validasi otomatis pada tahap berikutnya). closed bersifat final.
+// dokumen/validasi otomatis). need_documents TIDAK PERNAH di-set sistem:
+// temuan hanya menjadi saran yang dikonfirmasi petugas. closed bersifat final.
 var transitions = map[Status]map[Status]actorKind{
 	StatusDraft: {
 		StatusSubmitted: byUser,
@@ -101,6 +102,7 @@ var transitions = map[Status]map[Status]actorKind{
 	},
 	StatusSubmitted: {
 		StatusProcessing:    bySystem,
+		StatusNeedsReview:   bySystem, // validasi otomatis menemukan temuan open
 		StatusNeedDocuments: byUser,
 		StatusReviewed:      byUser,
 	},

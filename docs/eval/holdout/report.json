@@ -1,0 +1,1341 @@
+{
+  "dataset": "holdout",
+  "samples": "sample-data/holdout",
+  "holdout": true,
+  "rule_versions": [
+    "MISSING_DOCUMENT v1",
+    "MISSING_FIELD v1",
+    "NAME_MISMATCH v1",
+    "POLICY_MISMATCH v1",
+    "DATE_INCONSISTENCY v1",
+    "LOW_QUALITY_DOCUMENT v1"
+  ],
+  "generated_at": "2026-11-26T07:27:36Z",
+  "extractor_version": "rules-v1",
+  "engine_versions": [
+    "pdftotext 24.02.0",
+    "tesseract 5.3.4"
+  ],
+  "thresholds_high_min": [
+    85,
+    60
+  ],
+  "modes": [
+    {
+      "mode": "standar",
+      "findings": {
+        "scenarios": [
+          {
+            "id": "ha",
+            "title": "Set lengkap (nama dengan gelar, tata letak berbeda)",
+            "expected": null,
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 6,
+              "NAME_MISMATCH": 2
+            },
+            "false_positive": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "hb",
+            "title": "Nama kwitansi disingkat",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 6,
+              "NAME_MISMATCH": 2
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "evidence_incomplete": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 amount",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "hc",
+            "title": "Nomor polis formulir berbeda",
+            "expected": [
+              "POLICY_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH",
+              "POLICY_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 3,
+              "NAME_MISMATCH": 3,
+              "POLICY_MISMATCH": 1
+            },
+            "false_positive": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h06_formulir_mono_polis_beda.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "POLICY_MISMATCH [medium] ← h06_formulir_mono_polis_beda.pdf hal.1 policy_number | claim_record:policy_number"
+            ]
+          },
+          {
+            "id": "hd",
+            "title": "Tanggal kwitansi di masa depan",
+            "expected": [
+              "DATE_INCONSISTENCY"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 7,
+              "NAME_MISMATCH": 2
+            },
+            "false_positive": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "false_negative": [
+              "DATE_INCONSISTENCY"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 claimant_name",
+              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 document_date",
+              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 amount",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "LOW_QUALITY_DOCUMENT [high] ← h07_kwitansi_tanggal_depan.png hal.1"
+            ]
+          },
+          {
+            "id": "he",
+            "title": "Identitas noise berat",
+            "expected": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 7
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 claimant_name",
+              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 nik",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "LOW_QUALITY_DOCUMENT [high] ← h08_identitas_noise_berat.jpg hal.1"
+            ]
+          },
+          {
+            "id": "hf",
+            "title": "Nama pasien di surat dokter berbeda",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 8,
+              "NAME_MISMATCH": 1
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "evidence_incomplete": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [low] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "hg",
+            "title": "Hanya formulir dan surat dokter",
+            "expected": [
+              "MISSING_DOCUMENT"
+            ],
+            "predicted": [
+              "MISSING_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_DOCUMENT": 2,
+              "MISSING_FIELD": 3
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date"
+            ]
+          }
+        ],
+        "per_code": [
+          {
+            "code": "MISSING_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "MISSING_FIELD",
+            "tp": 1,
+            "fp": 6,
+            "fn": 0,
+            "precision": 0.1429,
+            "recall": 1
+          },
+          {
+            "code": "NAME_MISMATCH",
+            "tp": 2,
+            "fp": 3,
+            "fn": 0,
+            "precision": 0.4,
+            "recall": 1
+          },
+          {
+            "code": "POLICY_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "DATE_INCONSISTENCY",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          },
+          {
+            "code": "LOW_QUALITY_DOCUMENT",
+            "tp": 1,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.5,
+            "recall": 1
+          }
+        ],
+        "tp": 6,
+        "fp": 10,
+        "fn": 1,
+        "precision": 0.375,
+        "recall": 0.8571,
+        "tp_evidence_complete": 4,
+        "invalid_findings": 0
+      },
+      "files": [
+        {
+          "file": "h01_formulir_klaim_tabel_scan.jpg",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            65.34
+          ],
+          "duration_ms": 394,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Ir. Budi Santoso Pratama",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-2207",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h02_identitas_kartu_mono.png",
+          "document_type": "identitas",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            65.15
+          ],
+          "duration_ms": 375,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "got": "Budi Santoso",
+              "status": "found",
+              "confidence": 96.6,
+              "outcome": "salah"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h03_surat_keterangan_dokter.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 13,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "got": "2026-09-03",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "h04_kwitansi_struk.jpg",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            62.45
+          ],
+          "duration_ms": 597,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-09-05",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "got": "1850000",
+              "status": "found",
+              "confidence": 85.68,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "h05_kwitansi_nama_singkat.jpg",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            64.78
+          ],
+          "duration_ms": 460,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "B. Santoso Pratama",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-09-05",
+              "got": "2026-09-05",
+              "status": "found",
+              "confidence": 71.22,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h06_formulir_mono_polis_beda.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 13,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-2270",
+              "got": "POL-UJI-2270",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "got": "0000********0002",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "got": "2026-09-03",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h07_kwitansi_tanggal_depan.png",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            46.76
+          ],
+          "duration_ms": 563,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "status": "uncertain",
+              "confidence": 46.76150951666666,
+              "outcome": "uncertain"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-11-21",
+              "status": "uncertain",
+              "confidence": 46.76150951666666,
+              "outcome": "uncertain"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "uncertain",
+              "confidence": 46.76150951666666,
+              "outcome": "uncertain"
+            }
+          ]
+        },
+        {
+          "file": "h08_identitas_noise_berat.jpg",
+          "document_type": "identitas",
+          "expected_unreadable": true,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            15.05
+          ],
+          "duration_ms": 6917,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "status": "uncertain",
+              "confidence": 15.047355961977189,
+              "outcome": "tidak_menebak"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "status": "uncertain",
+              "confidence": 15.047355961977189,
+              "outcome": "tidak_menebak"
+            }
+          ]
+        },
+        {
+          "file": "h09_surat_dokter_nama_beda_scan.jpg",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            70.12
+          ],
+          "duration_ms": 548,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Setiawan",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "got": "2026-09-03",
+              "status": "uncertain",
+              "confidence": 53.67,
+              "outcome": "uncertain"
+            }
+          ]
+        }
+      ],
+      "summary": [
+        {
+          "field": "claimant_name",
+          "total": 8,
+          "correct": 2,
+          "wrong": 1,
+          "uncertain": 1,
+          "not_found": 4,
+          "accuracy": 0.25
+        },
+        {
+          "field": "policy_number",
+          "total": 2,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 1,
+          "accuracy": 0.5
+        },
+        {
+          "field": "nik",
+          "total": 3,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 2,
+          "accuracy": 0.3333
+        },
+        {
+          "field": "event_date",
+          "total": 4,
+          "correct": 2,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 1,
+          "accuracy": 0.5
+        },
+        {
+          "field": "document_date",
+          "total": 3,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 1,
+          "accuracy": 0.3333
+        },
+        {
+          "field": "amount",
+          "total": 5,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 3,
+          "accuracy": 0.2
+        }
+      ],
+      "overall_accuracy": 0.32,
+      "total_fields": 25,
+      "uncertain_count": 4,
+      "not_found_count": 12,
+      "wrong_count": 1,
+      "unreadable_abstained": 2,
+      "unreadable_guessed": 0,
+      "total_ms": 9880
+    },
+    {
+      "mode": "scan",
+      "findings": {
+        "scenarios": [
+          {
+            "id": "ha",
+            "title": "Set lengkap (nama dengan gelar, tata letak berbeda)",
+            "expected": null,
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 6,
+              "NAME_MISMATCH": 2
+            },
+            "false_positive": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "hb",
+            "title": "Nama kwitansi disingkat",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 6,
+              "NAME_MISMATCH": 2
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "evidence_incomplete": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h05_kwitansi_nama_singkat.jpg hal.1 amount",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "hc",
+            "title": "Nomor polis formulir berbeda",
+            "expected": [
+              "POLICY_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH",
+              "POLICY_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 3,
+              "NAME_MISMATCH": 3,
+              "POLICY_MISMATCH": 1
+            },
+            "false_positive": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h06_formulir_mono_polis_beda.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "POLICY_MISMATCH [medium] ← h06_formulir_mono_polis_beda.pdf hal.1 policy_number | claim_record:policy_number"
+            ]
+          },
+          {
+            "id": "hd",
+            "title": "Tanggal kwitansi di masa depan",
+            "expected": [
+              "DATE_INCONSISTENCY"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 7,
+              "NAME_MISMATCH": 2
+            },
+            "false_positive": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "false_negative": [
+              "DATE_INCONSISTENCY"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 claimant_name",
+              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 document_date",
+              "MISSING_FIELD [low] ← h07_kwitansi_tanggal_depan.png hal.1 amount",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "NAME_MISMATCH [low] ← h03_surat_keterangan_dokter.pdf hal.1 claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name",
+              "LOW_QUALITY_DOCUMENT [high] ← h07_kwitansi_tanggal_depan.png hal.1"
+            ]
+          },
+          {
+            "id": "he",
+            "title": "Identitas noise berat",
+            "expected": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "predicted": [
+              "LOW_QUALITY_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "LOW_QUALITY_DOCUMENT": 1,
+              "MISSING_FIELD": 7
+            },
+            "false_positive": null,
+            "false_negative": null,
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 claimant_name",
+              "MISSING_FIELD [low] ← h08_identitas_noise_berat.jpg hal.1 nik",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "LOW_QUALITY_DOCUMENT [high] ← h08_identitas_noise_berat.jpg hal.1"
+            ]
+          },
+          {
+            "id": "hf",
+            "title": "Nama pasien di surat dokter berbeda",
+            "expected": [
+              "NAME_MISMATCH"
+            ],
+            "predicted": [
+              "MISSING_FIELD",
+              "NAME_MISMATCH"
+            ],
+            "instances": {
+              "MISSING_FIELD": 8,
+              "NAME_MISMATCH": 1
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "evidence_incomplete": [
+              "NAME_MISMATCH"
+            ],
+            "details": [
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h02_identitas_kartu_mono.png hal.1 nik",
+              "MISSING_FIELD [medium] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [low] ← h09_surat_dokter_nama_beda_scan.jpg hal.1 event_date",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h04_kwitansi_struk.jpg hal.1 document_date",
+              "NAME_MISMATCH [low] ← claim_record:claimant_name | h02_identitas_kartu_mono.png hal.1 claimant_name"
+            ]
+          },
+          {
+            "id": "hg",
+            "title": "Hanya formulir dan surat dokter",
+            "expected": [
+              "MISSING_DOCUMENT"
+            ],
+            "predicted": [
+              "MISSING_DOCUMENT",
+              "MISSING_FIELD"
+            ],
+            "instances": {
+              "MISSING_DOCUMENT": 2,
+              "MISSING_FIELD": 3
+            },
+            "false_positive": [
+              "MISSING_FIELD"
+            ],
+            "false_negative": null,
+            "details": [
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_DOCUMENT [high] ← checklist:document_type | claim_record:product_type",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 claimant_name",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 policy_number",
+              "MISSING_FIELD [medium] ← h01_formulir_klaim_tabel_scan.jpg hal.1 event_date"
+            ]
+          }
+        ],
+        "per_code": [
+          {
+            "code": "MISSING_DOCUMENT",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "MISSING_FIELD",
+            "tp": 1,
+            "fp": 6,
+            "fn": 0,
+            "precision": 0.1429,
+            "recall": 1
+          },
+          {
+            "code": "NAME_MISMATCH",
+            "tp": 2,
+            "fp": 3,
+            "fn": 0,
+            "precision": 0.4,
+            "recall": 1
+          },
+          {
+            "code": "POLICY_MISMATCH",
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1
+          },
+          {
+            "code": "DATE_INCONSISTENCY",
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "precision": null,
+            "recall": 0
+          },
+          {
+            "code": "LOW_QUALITY_DOCUMENT",
+            "tp": 1,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.5,
+            "recall": 1
+          }
+        ],
+        "tp": 6,
+        "fp": 10,
+        "fn": 1,
+        "precision": 0.375,
+        "recall": 0.8571,
+        "tp_evidence_complete": 4,
+        "invalid_findings": 0
+      },
+      "files": [
+        {
+          "file": "h01_formulir_klaim_tabel_scan.jpg",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            65.34
+          ],
+          "duration_ms": 373,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Ir. Budi Santoso Pratama",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-2207",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h02_identitas_kartu_mono.png",
+          "document_type": "identitas",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            65.15
+          ],
+          "duration_ms": 336,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "got": "Budi Santoso",
+              "status": "found",
+              "confidence": 96.6,
+              "outcome": "salah"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h03_surat_keterangan_dokter.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            95.52
+          ],
+          "duration_ms": 1105,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 96.42,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "got": "2026-09-03",
+              "status": "found",
+              "confidence": 96.27,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "h04_kwitansi_struk.jpg",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            62.45
+          ],
+          "duration_ms": 508,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-09-05",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "got": "1850000",
+              "status": "found",
+              "confidence": 85.68,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "h05_kwitansi_nama_singkat.jpg",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            64.78
+          ],
+          "duration_ms": 525,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "B. Santoso Pratama",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-09-05",
+              "got": "2026-09-05",
+              "status": "found",
+              "confidence": 71.22,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h06_formulir_mono_polis_beda.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            93.34
+          ],
+          "duration_ms": 1228,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "got": "Budi Santoso Pratama",
+              "status": "found",
+              "confidence": 96.2,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-UJI-2270",
+              "got": "POL-UJI-2270",
+              "status": "found",
+              "confidence": 90.08,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "got": "0000********0002",
+              "status": "found",
+              "confidence": 87.66,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "got": "2026-09-03",
+              "status": "found",
+              "confidence": 96.26,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "not_found",
+              "outcome": "not_found"
+            }
+          ]
+        },
+        {
+          "file": "h07_kwitansi_tanggal_depan.png",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            46.76
+          ],
+          "duration_ms": 660,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "status": "uncertain",
+              "confidence": 46.76150951666666,
+              "outcome": "uncertain"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-11-21",
+              "status": "uncertain",
+              "confidence": 46.76150951666666,
+              "outcome": "uncertain"
+            },
+            {
+              "field": "amount",
+              "expected": "1850000",
+              "status": "uncertain",
+              "confidence": 46.76150951666666,
+              "outcome": "uncertain"
+            }
+          ]
+        },
+        {
+          "file": "h08_identitas_noise_berat.jpg",
+          "document_type": "identitas",
+          "expected_unreadable": true,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            15.05
+          ],
+          "duration_ms": 7001,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Santoso Pratama",
+              "status": "uncertain",
+              "confidence": 15.047355961977189,
+              "outcome": "tidak_menebak"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0002",
+              "status": "uncertain",
+              "confidence": 15.047355961977189,
+              "outcome": "tidak_menebak"
+            }
+          ]
+        },
+        {
+          "file": "h09_surat_dokter_nama_beda_scan.jpg",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            70.12
+          ],
+          "duration_ms": 585,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Budi Setiawan",
+              "status": "not_found",
+              "outcome": "not_found"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-09-03",
+              "got": "2026-09-03",
+              "status": "uncertain",
+              "confidence": 53.67,
+              "outcome": "uncertain"
+            }
+          ]
+        }
+      ],
+      "summary": [
+        {
+          "field": "claimant_name",
+          "total": 8,
+          "correct": 2,
+          "wrong": 1,
+          "uncertain": 1,
+          "not_found": 4,
+          "accuracy": 0.25
+        },
+        {
+          "field": "policy_number",
+          "total": 2,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 1,
+          "accuracy": 0.5
+        },
+        {
+          "field": "nik",
+          "total": 3,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 2,
+          "accuracy": 0.3333
+        },
+        {
+          "field": "event_date",
+          "total": 4,
+          "correct": 2,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 1,
+          "accuracy": 0.5
+        },
+        {
+          "field": "document_date",
+          "total": 3,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 1,
+          "accuracy": 0.3333
+        },
+        {
+          "field": "amount",
+          "total": 5,
+          "correct": 1,
+          "wrong": 0,
+          "uncertain": 1,
+          "not_found": 3,
+          "accuracy": 0.2
+        }
+      ],
+      "overall_accuracy": 0.32,
+      "total_fields": 25,
+      "uncertain_count": 4,
+      "not_found_count": 12,
+      "wrong_count": 1,
+      "unreadable_abstained": 2,
+      "unreadable_guessed": 0,
+      "total_ms": 12321
+    }
+  ]
+}

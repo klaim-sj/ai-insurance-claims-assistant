@@ -109,3 +109,32 @@ type User struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
+
+type ValidationFinding struct {
+	ID           int64
+	ClaimID      int64
+	RuleID       int64
+	RuleVersion  int32
+	FindingCode  string
+	Severity     string
+	Message      string
+	EvidenceJson []byte
+	Fingerprint  string
+	Status       string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	LastSeenAt   time.Time
+	ResolvedAt   *time.Time
+}
+
+type ValidationRule struct {
+	ID           int64
+	RuleCode     string
+	Name         string
+	Description  string
+	DocumentType *string
+	RuleConfig   []byte
+	Version      int32
+	IsActive     bool
+	CreatedAt    time.Time
+}

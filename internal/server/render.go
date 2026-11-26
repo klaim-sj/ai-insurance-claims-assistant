@@ -13,6 +13,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/extraction"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/validation"
 )
 
 // pageData adalah data untuk seluruh template.
@@ -114,6 +115,48 @@ var templateFuncs = template.FuncMap{
 		}
 		return fmt.Sprintf("%.0f", *v)
 	},
+	// --- Tahap 5: temuan validasi ---
+	"severityClass": func(sv validation.Severity) string {
+		switch sv {
+		case validation.SeverityHigh:
+			return "bg-rose-100 text-rose-900"
+		case validation.SeverityMedium:
+			return "bg-amber-100 text-amber-900"
+		}
+		return "bg-slate-100 text-slate-700"
+	},
+	"findingCodeLabel": findingCodeLabel,
+	"evidenceSourceLabel": func(e validation.Evidence) string {
+		switch e.Source {
+		case validation.SourceDocument:
+			return fmt.Sprintf("%s · dok. #%d · hal. %d", documents.Type(e.DocumentType).Label(), e.DocumentID, e.Page)
+		case validation.SourceClaimRecord:
+			return "Data klaim"
+		case validation.SourceChecklist:
+			return "Checklist dokumen wajib"
+		}
+		return e.Source
+	},
+	"evidenceFieldLabel": func(e validation.Evidence) string {
+		switch e.Field {
+		case "":
+			return ""
+		case "product_type":
+			return "Jenis produk"
+		case "document_type":
+			return "Jenis dokumen"
+		}
+		if e.Source == validation.SourceClaimRecord && e.Field == "claimant_name" {
+			return "Nama pemohon"
+		}
+		return extraction.Key(e.Field).Label()
+	},
+	"evidenceValue": func(e validation.Evidence) string {
+		if e.Source == validation.SourceChecklist && e.Field == "document_type" {
+			return documents.Type(e.Value).Label()
+		}
+		return e.Value
+	},
 	"deref": func(v *time.Time) time.Time {
 		if v == nil {
 			return time.Time{}
@@ -176,4 +219,24 @@ func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) 
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusInternalServerError)
 	_, _ = w.Write([]byte("Terjadi kesalahan pada server. Silakan coba lagi."))
+}
+
+// findingCodeLabel: nama jenis temuan untuk UI (netral, tanpa istilah
+// "ditolak"/"tidak layak").
+func findingCodeLabel(code string) string {
+	switch code {
+	case validation.CodeMissingDocument:
+		return "Dokumen wajib belum ada"
+	case validation.CodeMissingField:
+		return "Field wajib belum terbaca"
+	case validation.CodeNameMismatch:
+		return "Perbedaan nama"
+	case validation.CodePolicyMismatch:
+		return "Perbedaan nomor polis"
+	case validation.CodeDateInconsistency:
+		return "Tanggal tidak konsisten"
+	case validation.CodeLowQualityDocument:
+		return "Kualitas dokumen rendah"
+	}
+	return code
 }

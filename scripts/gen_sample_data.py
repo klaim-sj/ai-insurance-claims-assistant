@@ -9,6 +9,7 @@ Hasil (PDF/PNG) di-commit sehingga generator ini hanya perlu dijalankan
 ulang bila skenario berubah. Kebutuhan: Python 3, reportlab, Pillow.
 
     python3 -I scripts/gen_sample_data.py
+    python3 -I scripts/gen_sample_data.py --expected-only   # hanya expected.json
 
 Output deterministik untuk konten (PDF memakai invariant=1).
 """
@@ -253,6 +254,7 @@ def expected():
                                             "fields": {**claim_form_fields, "policy_number": POLICY_VARIANT}},
         "d_identitas_buram.png": {"document_type": "identitas", "mime_type": "image/png", "pages": 1,
                                   "fields": identity_fields,
+                                  "expected_unreadable": True,
                                   "note": "Nilai field adalah isi sebenarnya sebelum diburamkan. Sistem TIDAK boleh menebak; field diharapkan tidak terbaca atau confidence rendah."},
         "e_kuitansi_tanggal_sebelum_kejadian.pdf": {"document_type": "kuitansi", "mime_type": "application/pdf", "pages": 1,
                                                     "fields": {**receipt_fields, "receipt_date": RECEIPT_DATE_EARLY}},
@@ -278,7 +280,7 @@ def expected():
             "title": "Nama di formulir berbeda dengan identitas",
             "upload": swap("01_formulir_klaim.pdf", "b_formulir_klaim_nama_beda.pdf"),
             "expected_findings": [{
-                "code": "CROSS_DOC_NAME_MISMATCH",
+                "code": "NAME_MISMATCH",
                 "category": "konsistensi_antardokumen",
                 "status": "perlu_ditinjau",
                 "description": "Nama pada formulir klaim berbeda dari nama pada dokumen identitas.",
@@ -294,7 +296,7 @@ def expected():
             "title": "Nomor polis di formulir berbeda dengan data klaim",
             "upload": swap("01_formulir_klaim.pdf", "c_formulir_klaim_polis_beda.pdf"),
             "expected_findings": [{
-                "code": "POLICY_NUMBER_MISMATCH",
+                "code": "POLICY_MISMATCH",
                 "category": "konsistensi_data_klaim",
                 "status": "perlu_ditinjau",
                 "description": "Nomor polis pada formulir klaim berbeda dari nomor polis pada data klaim.",
@@ -310,13 +312,24 @@ def expected():
             "title": "Gambar identitas sengaja buram",
             "upload": swap("02_identitas.png", "d_identitas_buram.png"),
             "expected_findings": [{
-                "code": "DOCUMENT_UNREADABLE",
+                "code": "LOW_QUALITY_DOCUMENT",
                 "category": "kualitas_dokumen",
                 "status": "perlu_ditinjau",
                 "description": "Dokumen identitas buram sehingga field tidak dapat dibaca dengan andal.",
                 "evidence": [
                     {"file": "d_identitas_buram.png", "page": 1, "field": None, "value": None,
                      "signal": "confidence OCR rendah / teks tidak terbaca"},
+                ],
+            }, {
+                "code": "MISSING_FIELD",
+                "category": "kelengkapan_field",
+                "status": "perlu_ditinjau",
+                "description": "Field wajib identitas (nama, NIK) tidak terbaca dengan pasti.",
+                "evidence": [
+                    {"file": "d_identitas_buram.png", "page": 1, "field": "full_name", "value": None,
+                     "signal": "uncertain"},
+                    {"file": "d_identitas_buram.png", "page": 1, "field": "nik", "value": None,
+                     "signal": "uncertain"},
                 ],
             }],
             "expected_behavior": "Jangan menebak nama/NIK dari gambar buram; perbandingan nama formulir vs identitas ditandai tidak dapat dilakukan, bukan dianggap cocok.",
@@ -327,7 +340,7 @@ def expected():
             "title": "Tanggal kuitansi sebelum tanggal kejadian",
             "upload": swap("04_kuitansi.pdf", "e_kuitansi_tanggal_sebelum_kejadian.pdf"),
             "expected_findings": [{
-                "code": "RECEIPT_DATE_BEFORE_INCIDENT",
+                "code": "DATE_INCONSISTENCY",
                 "category": "konsistensi_tanggal",
                 "status": "perlu_ditinjau",
                 "description": "Tanggal kuitansi lebih awal dari tanggal kejadian/masuk perawatan.",
@@ -338,6 +351,21 @@ def expected():
                 ],
             }],
             "suggested_followup": ["Konfirmasi tanggal kuitansi ke fasilitas kesehatan; minta kuitansi yang sesuai bila salah ketik."],
+        },
+        {
+            "id": "f",
+            "title": "Kuitansi belum diunggah",
+            "upload": [f for f in base if f != "04_kuitansi.pdf"],
+            "expected_findings": [{
+                "code": "MISSING_DOCUMENT",
+                "category": "kelengkapan_dokumen",
+                "status": "perlu_ditinjau",
+                "description": "Dokumen wajib kuitansi belum ada pada klaim.",
+                "evidence": [
+                    {"source": "checklist", "field": "document_type", "value": "kuitansi"},
+                ],
+            }],
+            "suggested_followup": ["Minta peserta mengunggah kuitansi (status 'Perlu dokumen' hanya bila petugas setuju)."],
         },
     ]
     return {
@@ -353,6 +381,15 @@ def expected():
 def main():
     os.makedirs(OUT, exist_ok=True)
     p = lambda n: os.path.join(OUT, n)
+    if "--expected-only" not in sys.argv[1:]:
+        build_files(p)
+    with open(p("expected.json"), "w", encoding="utf-8") as f:
+        json.dump(expected(), f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    print("sample-data/ dibuat", file=sys.stderr)
+
+
+def build_files(p):
     formulir(p("01_formulir_klaim.pdf"), PERSON["full_name"], CLAIM["policy_number"])
     identitas(p("02_identitas.png"))
     surat_medis(p("03_surat_keterangan_medis.pdf"))
@@ -361,10 +398,6 @@ def main():
     formulir(p("c_formulir_klaim_polis_beda.pdf"), PERSON["full_name"], POLICY_VARIANT)
     identitas(p("d_identitas_buram.png"), blur=6)
     kuitansi(p("e_kuitansi_tanggal_sebelum_kejadian.pdf"), RECEIPT_DATE_EARLY)
-    with open(p("expected.json"), "w", encoding="utf-8") as f:
-        json.dump(expected(), f, ensure_ascii=False, indent=2)
-        f.write("\n")
-    print("sample-data/ dibuat", file=sys.stderr)
 
 
 if __name__ == "__main__":

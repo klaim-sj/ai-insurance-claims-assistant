@@ -28,7 +28,7 @@ const lockKey = 7_420_251_125
 // Tabel aplikasi yang dikosongkan sebelum setiap test.
 var tables = []string{
 	"audit_logs", "claim_status_histories", "claim_number_counters",
-	"extracted_fields", "ocr_results", "claim_documents", "claims", "sessions", "users",
+	"validation_findings", "extracted_fields", "ocr_results", "claim_documents", "claims", "sessions", "users",
 	"river_job", "river_leader", "river_queue",
 }
 
