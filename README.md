@@ -313,6 +313,10 @@ keputusan**. Status klaim tidak diubah oleh pemrosesan dokumen.
     error (`OCR_TIMEOUT`, `OCR_ENGINE_ERROR`, `PDF_RENDER_FAILED`,
     `FILE_UNAVAILABLE`, …) disimpan di `claim_documents.processing_error_code`
     dan ditampilkan dengan pesan yang jelas. Error permanen langsung `failed`.
+  - **Skema River** ada di `migrations/*_river_*.sql` (dijalankan goose),
+    tetapi tidak dibaca sqlc: `sqlc.yaml` mendaftarkan migrasi aplikasi satu
+    per satu sehingga `internal/db/models.go` hanya berisi tabel aplikasi.
+    Migrasi aplikasi baru wajib ditambahkan ke `sqlc.yaml` (dijaga test).
   - **Proses ulang**: tombol untuk petugas (izin `documents.process`) pada
     dokumen `failed`/`completed`; hasil lama diganti.
 - **OCR** (`internal/ocr`): PDF dicoba `pdftotext -raw` dulu; halaman tanpa

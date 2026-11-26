@@ -1,7 +1,20 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    schema: "migrations"
+    # Hanya migrasi aplikasi; migrasi skema River (*_river_*.sql) sengaja
+    # tidak dibaca agar internal/db/models.go hanya berisi tabel aplikasi.
+    # Migrasi aplikasi baru WAJIB ditambahkan di sini (dijaga oleh
+    # migrations.TestSqlcSchemaListsAppMigrations).
+    schema:
+      - "migrations/00001_create_users.sql"
+      - "migrations/00002_create_claims.sql"
+      - "migrations/00003_create_claim_documents.sql"
+      - "migrations/00004_create_audit_logs.sql"
+      - "migrations/00005_create_sessions.sql"
+      - "migrations/00006_create_claim_status_histories.sql"
+      - "migrations/00007_create_claim_number_counters.sql"
+      - "migrations/00008_claim_documents_upload.sql"
+      - "migrations/00009_ocr_extraction.sql"
     queries: "db/queries"
     gen:
       go:
