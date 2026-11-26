@@ -67,3 +67,30 @@ func TestLoadRejectsUnknownEnv(t *testing.T) {
 		t.Fatal("APP_ENV tidak dikenal seharusnya gagal")
 	}
 }
+
+func TestLoadWorkerDefaultsAndValidation(t *testing.T) {
+	cfg, _, err := Load(env(map[string]string{"DATABASE_URL": "postgres://x"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.WorkerEnabled || cfg.WorkerConcurrency != DefaultWorkerConcurrency || cfg.OCRTimeout != DefaultOCRTimeout {
+		t.Fatalf("default worker tidak sesuai: %+v", cfg)
+	}
+	cfg, _, err = Load(env(map[string]string{
+		"DATABASE_URL": "postgres://x", "WORKER_ENABLED": "false", "WORKER_CONCURRENCY": "4", "OCR_TIMEOUT": "90s",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.WorkerEnabled || cfg.WorkerConcurrency != 4 || cfg.OCRTimeout.Seconds() != 90 {
+		t.Fatalf("override worker tidak sesuai: %+v", cfg)
+	}
+	for _, bad := range []map[string]string{
+		{"WORKER_CONCURRENCY": "0"}, {"WORKER_CONCURRENCY": "abc"}, {"OCR_TIMEOUT": "10ms"}, {"OCR_TIMEOUT": "x"},
+	} {
+		bad["DATABASE_URL"] = "postgres://x"
+		if _, _, err := Load(env(bad)); err == nil {
+			t.Errorf("konfigurasi %v seharusnya ditolak", bad)
+		}
+	}
+}

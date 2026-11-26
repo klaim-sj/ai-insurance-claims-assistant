@@ -5,7 +5,9 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // MinSecretLength adalah panjang minimum APP_SECRET (dalam byte/karakter).
@@ -22,7 +24,19 @@ type Config struct {
 	TrustProxy bool
 	// StorageDir: direktori private storage dokumen (di luar web/static).
 	StorageDir string
+	// WorkerEnabled: jalankan worker River (OCR/ekstraksi) di proses server.
+	WorkerEnabled bool
+	// WorkerConcurrency: jumlah dokumen yang diproses paralel.
+	WorkerConcurrency int
+	// OCRTimeout: batas waktu per pemanggilan binary OCR.
+	OCRTimeout time.Duration
 }
+
+// Nilai default worker OCR.
+const (
+	DefaultWorkerConcurrency = 2
+	DefaultOCRTimeout        = 60 * time.Second
+)
 
 // DefaultStorageDir dipakai bila STORAGE_DIR kosong.
 const DefaultStorageDir = "storage/documents"
@@ -56,6 +70,24 @@ func Load(getenv func(string) string) (cfg Config, warnings []string, err error)
 	cfg.StorageDir = strings.TrimSpace(getenv("STORAGE_DIR"))
 	if cfg.StorageDir == "" {
 		cfg.StorageDir = DefaultStorageDir
+	}
+
+	cfg.WorkerEnabled = !strings.EqualFold(strings.TrimSpace(getenv("WORKER_ENABLED")), "false")
+	cfg.WorkerConcurrency = DefaultWorkerConcurrency
+	if v := strings.TrimSpace(getenv("WORKER_CONCURRENCY")); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > 16 {
+			return Config{}, nil, errors.New("WORKER_CONCURRENCY harus bilangan 1–16")
+		}
+		cfg.WorkerConcurrency = n
+	}
+	cfg.OCRTimeout = DefaultOCRTimeout
+	if v := strings.TrimSpace(getenv("OCR_TIMEOUT")); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil || d < time.Second || d > 30*time.Minute {
+			return Config{}, nil, errors.New("OCR_TIMEOUT harus durasi 1s–30m, mis. 60s")
+		}
+		cfg.OCRTimeout = d
 	}
 
 	cfg.TrustProxy = strings.EqualFold(strings.TrimSpace(getenv("TRUST_PROXY")), "true")

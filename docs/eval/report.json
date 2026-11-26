@@ -1,0 +1,804 @@
+{
+  "generated_at": "2026-11-26T05:10:38Z",
+  "extractor_version": "rules-v1",
+  "engine_versions": [
+    "pdftotext 24.02.0",
+    "tesseract 5.3.4"
+  ],
+  "thresholds_high_min": [
+    85,
+    60
+  ],
+  "modes": [
+    {
+      "mode": "standar",
+      "files": [
+        {
+          "file": "01_formulir_klaim.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 7,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-DEMO-0101",
+              "got": "POL-DEMO-0101",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "02_identitas.png",
+          "document_type": "identitas",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            86.85
+          ],
+          "duration_ms": 271,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 96.42,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 92.6,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "03_surat_keterangan_medis.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 14,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "04_kuitansi.pdf",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 7,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-10-12",
+              "got": "2026-10-12",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "b_formulir_klaim_nama_beda.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 7,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusumawati",
+              "got": "Rani Kusumawati",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-DEMO-0101",
+              "got": "POL-DEMO-0101",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "c_formulir_klaim_polis_beda.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 10,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-DEMO-0110",
+              "got": "POL-DEMO-0110",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "d_identitas_buram.png",
+          "document_type": "identitas",
+          "expected_unreadable": true,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            27.08
+          ],
+          "duration_ms": 391,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "status": "uncertain",
+              "confidence": 27.084911799999997,
+              "outcome": "tidak_menebak"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "status": "uncertain",
+              "confidence": 27.084911799999997,
+              "outcome": "tidak_menebak"
+            }
+          ]
+        },
+        {
+          "file": "e_kuitansi_tanggal_sebelum_kejadian.pdf",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "pdftotext"
+          ],
+          "page_mean_confidence": [
+            100
+          ],
+          "duration_ms": 9,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-10-05",
+              "got": "2026-10-05",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 100,
+              "outcome": "benar"
+            }
+          ]
+        }
+      ],
+      "summary": [
+        {
+          "field": "claimant_name",
+          "total": 7,
+          "correct": 7,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "policy_number",
+          "total": 3,
+          "correct": 3,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "nik",
+          "total": 4,
+          "correct": 4,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "event_date",
+          "total": 4,
+          "correct": 4,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "document_date",
+          "total": 2,
+          "correct": 2,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "amount",
+          "total": 5,
+          "correct": 5,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        }
+      ],
+      "overall_accuracy": 1,
+      "total_fields": 25,
+      "uncertain_count": 0,
+      "not_found_count": 0,
+      "wrong_count": 0,
+      "unreadable_abstained": 2,
+      "unreadable_guessed": 0,
+      "total_ms": 716
+    },
+    {
+      "mode": "scan",
+      "files": [
+        {
+          "file": "01_formulir_klaim.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            93.51
+          ],
+          "duration_ms": 1272,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 96.41,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-DEMO-0101",
+              "got": "POL-DEMO-0101",
+              "status": "found",
+              "confidence": 90.24,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 90.34,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 96.58,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 95.7,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "02_identitas.png",
+          "document_type": "identitas",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            86.85
+          ],
+          "duration_ms": 310,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 96.42,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 92.6,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "03_surat_keterangan_medis.pdf",
+          "document_type": "surat_keterangan_medis",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            94.28
+          ],
+          "duration_ms": 1178,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 96.41,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 96.2,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "04_kuitansi.pdf",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            93.3
+          ],
+          "duration_ms": 920,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 96.2,
+              "outcome": "benar"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-10-12",
+              "got": "2026-10-12",
+              "status": "found",
+              "confidence": 96.77,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 95.92,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "b_formulir_klaim_nama_beda.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            93.35
+          ],
+          "duration_ms": 1128,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusumawati",
+              "got": "Rani Kusumawati",
+              "status": "found",
+              "confidence": 92.63,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-DEMO-0101",
+              "got": "POL-DEMO-0101",
+              "status": "found",
+              "confidence": 90.24,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 90.34,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 96.58,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 95.7,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "c_formulir_klaim_polis_beda.pdf",
+          "document_type": "formulir_klaim",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            93.55
+          ],
+          "duration_ms": 1239,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 96.41,
+              "outcome": "benar"
+            },
+            {
+              "field": "policy_number",
+              "expected": "POL-DEMO-0110",
+              "got": "POL-DEMO-0110",
+              "status": "found",
+              "confidence": 91.13,
+              "outcome": "benar"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "got": "0000********0001",
+              "status": "found",
+              "confidence": 90.34,
+              "outcome": "benar"
+            },
+            {
+              "field": "event_date",
+              "expected": "2026-10-10",
+              "got": "2026-10-10",
+              "status": "found",
+              "confidence": 96.58,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 95.7,
+              "outcome": "benar"
+            }
+          ]
+        },
+        {
+          "file": "d_identitas_buram.png",
+          "document_type": "identitas",
+          "expected_unreadable": true,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            27.08
+          ],
+          "duration_ms": 362,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "status": "uncertain",
+              "confidence": 27.084911799999997,
+              "outcome": "tidak_menebak"
+            },
+            {
+              "field": "nik",
+              "expected": "0000********0001",
+              "status": "uncertain",
+              "confidence": 27.084911799999997,
+              "outcome": "tidak_menebak"
+            }
+          ]
+        },
+        {
+          "file": "e_kuitansi_tanggal_sebelum_kejadian.pdf",
+          "document_type": "kuitansi",
+          "expected_unreadable": false,
+          "engines": [
+            "tesseract"
+          ],
+          "page_mean_confidence": [
+            92.74
+          ],
+          "duration_ms": 1074,
+          "fields": [
+            {
+              "field": "claimant_name",
+              "expected": "Rani Kusuma Dewi",
+              "got": "Rani Kusuma Dewi",
+              "status": "found",
+              "confidence": 96.2,
+              "outcome": "benar"
+            },
+            {
+              "field": "document_date",
+              "expected": "2026-10-05",
+              "got": "2026-10-05",
+              "status": "found",
+              "confidence": 96.45,
+              "outcome": "benar"
+            },
+            {
+              "field": "amount",
+              "expected": "2750000",
+              "got": "2750000",
+              "status": "found",
+              "confidence": 95.92,
+              "outcome": "benar"
+            }
+          ]
+        }
+      ],
+      "summary": [
+        {
+          "field": "claimant_name",
+          "total": 7,
+          "correct": 7,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "policy_number",
+          "total": 3,
+          "correct": 3,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "nik",
+          "total": 4,
+          "correct": 4,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "event_date",
+          "total": 4,
+          "correct": 4,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "document_date",
+          "total": 2,
+          "correct": 2,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        },
+        {
+          "field": "amount",
+          "total": 5,
+          "correct": 5,
+          "wrong": 0,
+          "uncertain": 0,
+          "not_found": 0,
+          "accuracy": 1
+        }
+      ],
+      "overall_accuracy": 1,
+      "total_fields": 25,
+      "uncertain_count": 0,
+      "not_found_count": 0,
+      "wrong_count": 0,
+      "unreadable_abstained": 2,
+      "unreadable_guessed": 0,
+      "total_ms": 7483
+    }
+  ]
+}

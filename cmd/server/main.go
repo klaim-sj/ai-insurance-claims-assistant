@@ -17,6 +17,9 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/auth"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/config"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/db"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/ocr"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/processing"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/server"
 )
 
@@ -65,9 +68,47 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	storage, err := documents.NewStorage(cfg.StorageDir)
+	if err != nil {
+		return err
+	}
+	docSvc := documents.NewService(pool, storage, logger)
+
+	// Queue River: job ProcessClaimDocument dimasukkan saat unggah/proses
+	// ulang. Worker (OCR + ekstraksi) berjalan di proses ini bila diaktifkan.
+	clientCfg := processing.ClientConfig{Logger: logger, MaxWorkers: cfg.WorkerConcurrency}
+	if cfg.WorkerEnabled {
+		engine := ocr.NewExec(ocr.ExecConfig{Timeout: cfg.OCRTimeout})
+		if err := engine.Check(ctx); err != nil {
+			// Server tetap berjalan; job akan gagal dengan kode error yang
+			// jelas dan dapat diproses ulang setelah alat dipasang.
+			logger.Warn("alat OCR belum lengkap; pemrosesan dokumen akan gagal", "error_code", string(ocr.CodeOf(err)))
+		}
+		clientCfg.Worker = processing.NewWorker(pool, storage, engine, logger)
+	}
+	queue, err := processing.NewClient(pool, clientCfg)
+	if err != nil {
+		return err
+	}
+	if cfg.WorkerEnabled {
+		if err := queue.Start(ctx); err != nil {
+			return err
+		}
+		logger.Info("worker dokumen berjalan", "concurrency", cfg.WorkerConcurrency)
+		defer func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := queue.Stop(stopCtx); err != nil {
+				logger.Error("menghentikan worker", "error", err)
+			}
+		}()
+	}
+
 	srv, err := server.New(server.Options{
 		Config:                 cfg,
 		Pool:                   pool,
+		Documents:              docSvc,
+		Queue:                  queue.Queue,
 		Auth:                   authSvc,
 		Audit:                  auditLog,
 		Limiter:                auth.NewRateLimiter(loginRateEvery, loginRateBurst),

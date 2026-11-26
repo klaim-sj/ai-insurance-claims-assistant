@@ -114,8 +114,9 @@ func TestDocumentUploadValid(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.ProcessingStatus != documents.StatusUploaded {
-			t.Errorf("processing_status = %q, ingin uploaded", d.ProcessingStatus)
+		// Tahap 4: dokumen langsung diantrekan untuk OCR dalam transaksi unggah.
+		if d.ProcessingStatus != documents.StatusQueued || d.QueuedAt == nil {
+			t.Errorf("processing_status = %q, ingin queued", d.ProcessingStatus)
 		}
 		if !storagePathRe.MatchString(d.StoragePath) || strings.Contains(d.StoragePath, "Formulir") {
 			t.Errorf("storage_path harus acak, dapat %q", d.StoragePath)

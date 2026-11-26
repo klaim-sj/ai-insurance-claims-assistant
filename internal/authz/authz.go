@@ -55,8 +55,10 @@ const (
 	PermDocumentsView Permission = "documents.view"
 	// PermDocumentsUpload: mengunggah dokumen ke klaim yang boleh diakses.
 	PermDocumentsUpload Permission = "documents.upload"
-	PermReportsView     Permission = "reports.view"
-	PermUsersManage     Permission = "users.manage"
+	// PermDocumentsProcess: meminta proses ulang OCR/ekstraksi dokumen.
+	PermDocumentsProcess Permission = "documents.process"
+	PermReportsView      Permission = "reports.view"
+	PermUsersManage      Permission = "users.manage"
 )
 
 // ErrForbidden dikembalikan bila peran tidak memiliki izin.
@@ -67,13 +69,13 @@ var matrix = map[Role]map[Permission]bool{
 	RoleClaimsOfficer: {
 		PermDashboardView: true, PermClaimsView: true, PermClaimsCreate: true,
 		PermClaimsEdit: true, PermClaimsTransition: true,
-		PermDocumentsView: true, PermDocumentsUpload: true,
+		PermDocumentsView: true, PermDocumentsUpload: true, PermDocumentsProcess: true,
 	},
 	RoleSupervisor: {
 		PermDashboardView: true, PermClaimsView: true, PermClaimsCreate: true,
 		PermClaimsEdit: true, PermClaimsTransition: true, PermClaimsViewAll: true,
 		PermClaimsReassign: true, PermReportsView: true,
-		PermDocumentsView: true, PermDocumentsUpload: true,
+		PermDocumentsView: true, PermDocumentsUpload: true, PermDocumentsProcess: true,
 	},
 	RoleAdmin: {PermDashboardView: true, PermReportsView: true, PermUsersManage: true},
 }

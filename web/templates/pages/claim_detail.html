@@ -25,6 +25,54 @@
       </dl>
     </section>
 
+    {{if $.Data.Comparisons}}
+    <section id="detected" aria-labelledby="detected-heading" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 id="detected-heading" class="text-base font-semibold">Data terdeteksi vs data klaim</h2>
+      <p class="mt-1 text-xs text-slate-500">Nilai terdeteksi berasal dari formulir klaim terbaru yang selesai diproses. Perbedaan adalah bahan tindak lanjut petugas, bukan keputusan. Tidak ada perubahan data tanpa konfirmasi Anda; setiap penerapan tercatat di audit.</p>
+      <div class="mt-4 overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead>
+            <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+              <th scope="col" class="py-2 pr-4">Field</th>
+              <th scope="col" class="py-2 pr-4">Data klaim</th>
+              <th scope="col" class="py-2 pr-4">Terdeteksi</th>
+              <th scope="col" class="py-2">Tindak lanjut</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {{range $.Data.Comparisons}}
+            <tr class="align-top">
+              <th scope="row" class="py-2 pr-4 text-left font-medium">{{.Label}}</th>
+              <td class="py-2 pr-4">{{.ClaimValue}}</td>
+              <td class="py-2 pr-4">
+                {{with .Detected}}
+                  {{if .Value}}<span class="font-medium">{{.Value}}</span>{{else}}<span class="text-slate-400">—</span>{{end}}
+                  <span class="block text-xs text-slate-500">{{fieldStatusLabel .Status}}{{if .ConfidenceLabel}} · <span class="rounded-full px-1.5 py-0.5 font-medium {{confClass .ConfidenceLabel}}">{{.ConfidenceLabel}}</span>{{end}}</span>
+                {{else}}<span class="text-xs text-slate-500">Belum ada formulir klaim yang selesai diproses.</span>{{end}}
+              </td>
+              <td class="py-2 text-sm">
+                {{if .Detected}}
+                  {{if .Match}}<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">Sama</span>
+                  {{else if eq (print .Detected.Status) "found"}}<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Berbeda — perlu ditinjau</span>
+                  {{else}}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">Tidak dapat dibandingkan — verifikasi manual</span>{{end}}
+                  <a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.DocumentID}}/hasil" class="mt-1 block rounded text-xs text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Lihat sumber (dok. #{{.DocumentID}}{{if .Detected.Page}}, hal. {{.Detected.Page}}{{end}})</a>
+                  {{if .CanApply}}
+                  <form method="post" action="/claims/{{$.Data.D.Claim.ID}}/detected/{{.Detected.ID}}/apply" class="mt-2"
+                        data-confirm="Terapkan nilai terdeteksi ke data klaim? Perubahan tercatat di audit.">
+                    <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                    <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2">Terapkan ke data klaim<span class="sr-only">: {{.Label}}</span></button>
+                  </form>
+                  {{end}}
+                {{end}}
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {{end}}
+
     <section id="documents" aria-labelledby="documents-heading" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
       <h2 id="documents-heading" class="text-base font-semibold">Dokumen</h2>
       <p class="mt-1 text-xs text-slate-500">Dokumen disimpan privat dan hanya dapat dibuka oleh petugas yang berhak atas klaim ini. Setiap akses dicatat.</p>
@@ -50,11 +98,22 @@
                 <span class="text-xs text-slate-500">{{if eq .MIME "application/pdf"}}PDF · {{.Pages}} halaman{{else if eq .MIME "image/png"}}PNG{{else}}JPG{{end}}{{if .DuplicateOf}} · duplikat dok. #{{.DuplicateOf}}{{end}}</span>
               </td>
               <td class="whitespace-nowrap py-2 pr-4">{{filesize .Size}}</td>
-              <td class="py-2 pr-4"><span class="whitespace-nowrap rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700" {{if eq .Status "uploaded"}}title="Siap untuk OCR (tahap berikutnya)"{{end}}>{{docStatusLabel .Status}}</span></td>
+              <td class="py-2 pr-4">
+                <span class="whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium {{docStatusClass .Status}}">{{docStatusLabel .Status}}</span>
+                {{if .ErrorCode}}<span class="mt-1 block max-w-[12rem] text-xs {{if eq .Status "failed"}}text-red-700{{else}}text-amber-800{{end}}">{{docErrorLabel .ErrorCode}}</span>{{end}}
+              </td>
               <td class="py-2 pr-4 text-xs text-slate-500">{{datetime .CreatedAt}}{{if .UploaderName}}<br>{{.UploaderName}}{{end}}</td>
-              <td class="whitespace-nowrap py-2 text-right">
-                <a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}" target="_blank" rel="noopener noreferrer" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Pratinjau<span class="sr-only"> dokumen #{{.ID}}</span></a>
-                · <a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}?download=1" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Unduh<span class="sr-only"> dokumen #{{.ID}}</span></a>
+              <td class="py-2 text-right text-xs">
+                <a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}/hasil" class="block whitespace-nowrap rounded font-medium text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Hasil ekstraksi<span class="sr-only"> dokumen #{{.ID}}</span></a>
+                <span class="whitespace-nowrap"><a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}" target="_blank" rel="noopener noreferrer" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Pratinjau<span class="sr-only"> dokumen #{{.ID}}</span></a>
+                · <a href="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}?download=1" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Unduh<span class="sr-only"> dokumen #{{.ID}}</span></a></span>
+                {{if and $.Data.CanProcess (eq .Status "failed")}}
+                <form method="post" action="/claims/{{$.Data.D.Claim.ID}}/documents/{{.ID}}/process" class="mt-1">
+                  <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                  <input type="hidden" name="back" value="claim">
+                  <button type="submit" class="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Proses ulang<span class="sr-only"> dokumen #{{.ID}}</span></button>
+                </form>
+                {{end}}
               </td>
             </tr>
             {{end}}

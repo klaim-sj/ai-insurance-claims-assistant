@@ -26,6 +26,16 @@ const (
 	ActionDocumentUploaded          = "document_uploaded"
 	ActionDocumentViewed            = "document_viewed"
 	ActionDocumentDuplicateDetected = "document_duplicate_detected"
+
+	// Tahap 4: pemrosesan OCR/ekstraksi. Tidak pernah memuat teks OCR atau
+	// nilai field.
+	ActionDocumentProcessingQueued    = "document_processing_queued"
+	ActionDocumentProcessingStarted   = "document_processing_started"
+	ActionDocumentProcessingCompleted = "document_processing_completed"
+	ActionDocumentProcessingFailed    = "document_processing_failed"
+	// ActionExtractedValueApplied: petugas menerapkan nilai terdeteksi ke
+	// data klaim (nilai disamarkan di audit).
+	ActionExtractedValueApplied = "extracted_value_applied"
 )
 
 // Jenis entitas.

@@ -5,8 +5,60 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type RiverJobState string
+
+const (
+	RiverJobStateAvailable RiverJobState = "available"
+	RiverJobStateCancelled RiverJobState = "cancelled"
+	RiverJobStateCompleted RiverJobState = "completed"
+	RiverJobStateDiscarded RiverJobState = "discarded"
+	RiverJobStatePending   RiverJobState = "pending"
+	RiverJobStateRetryable RiverJobState = "retryable"
+	RiverJobStateRunning   RiverJobState = "running"
+	RiverJobStateScheduled RiverJobState = "scheduled"
+)
+
+func (e *RiverJobState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RiverJobState(s)
+	case string:
+		*e = RiverJobState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RiverJobState: %T", src)
+	}
+	return nil
+}
+
+type NullRiverJobState struct {
+	RiverJobState RiverJobState
+	Valid         bool // Valid is true if RiverJobState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRiverJobState) Scan(value interface{}) error {
+	if value == nil {
+		ns.RiverJobState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RiverJobState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRiverJobState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RiverJobState), nil
+}
 
 type AuditLog struct {
 	ID         int64
@@ -33,20 +85,24 @@ type Claim struct {
 }
 
 type ClaimDocument struct {
-	ID               int64
-	ClaimID          int64
-	DocumentType     string
-	OriginalName     string
-	StoragePath      string
-	MimeType         string
-	FileSize         int64
-	Checksum         string
-	ProcessingStatus string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	UploadedBy       *int64
-	PageCount        *int32
-	DuplicateOf      *int64
+	ID                  int64
+	ClaimID             int64
+	DocumentType        string
+	OriginalName        string
+	StoragePath         string
+	MimeType            string
+	FileSize            int64
+	Checksum            string
+	ProcessingStatus    string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	UploadedBy          *int64
+	PageCount           *int32
+	DuplicateOf         *int64
+	ProcessingErrorCode *string
+	ProcessingAttempts  int32
+	QueuedAt            *time.Time
+	ProcessedAt         *time.Time
 }
 
 type ClaimNumberCounter struct {
@@ -62,6 +118,86 @@ type ClaimStatusHistory struct {
 	ChangedBy *int64
 	Reason    *string
 	CreatedAt time.Time
+}
+
+type ExtractedField struct {
+	ID               int64
+	DocumentID       int64
+	FieldKey         string
+	FieldValue       *string
+	Status           string
+	Confidence       *float64
+	PageNumber       *int32
+	SourceExcerpt    *string
+	ExtractorVersion string
+	CreatedAt        time.Time
+}
+
+type OcrResult struct {
+	ID             int64
+	DocumentID     int64
+	PageNumber     int32
+	ExtractedText  string
+	Engine         string
+	EngineVersion  string
+	MeanConfidence *float64
+	WordCount      int32
+	ProcessedAt    time.Time
+}
+
+type RiverClient struct {
+	ID        string
+	CreatedAt time.Time
+	Metadata  []byte
+	PausedAt  *time.Time
+	UpdatedAt time.Time
+}
+
+type RiverClientQueue struct {
+	RiverClientID    string
+	Name             string
+	CreatedAt        time.Time
+	MaxWorkers       int64
+	Metadata         []byte
+	NumJobsCompleted int64
+	NumJobsRunning   int64
+	UpdatedAt        time.Time
+}
+
+type RiverJob struct {
+	ID           int64
+	State        RiverJobState
+	Attempt      int16
+	MaxAttempts  int16
+	AttemptedAt  *time.Time
+	CreatedAt    time.Time
+	FinalizedAt  *time.Time
+	ScheduledAt  time.Time
+	Priority     int16
+	Args         []byte
+	AttemptedBy  []string
+	Errors       [][]byte
+	Kind         string
+	Metadata     []byte
+	Queue        string
+	Tags         []string
+	UniqueKey    []byte
+	UniqueStates pgtype.Bits
+}
+
+type RiverLeader struct {
+	ElectedAt time.Time
+	ExpiresAt time.Time
+	LeaderID  string
+	Name      string
+}
+
+type RiverQueue struct {
+	Name      string
+	CreatedAt time.Time
+	Metadata  []byte
+	PausedAt  *time.Time
+	UpdatedAt time.Time
 }
 
 type Session struct {

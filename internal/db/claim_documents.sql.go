@@ -11,7 +11,7 @@ import (
 )
 
 const getClaimDocument = `-- name: GetClaimDocument :one
-SELECT id, claim_id, document_type, original_name, storage_path, mime_type, file_size, checksum, processing_status, created_at, updated_at, uploaded_by, page_count, duplicate_of FROM claim_documents
+SELECT id, claim_id, document_type, original_name, storage_path, mime_type, file_size, checksum, processing_status, created_at, updated_at, uploaded_by, page_count, duplicate_of, processing_error_code, processing_attempts, queued_at, processed_at FROM claim_documents
 WHERE id = $1 AND claim_id = $2
 `
 
@@ -39,6 +39,10 @@ func (q *Queries) GetClaimDocument(ctx context.Context, arg GetClaimDocumentPara
 		&i.UploadedBy,
 		&i.PageCount,
 		&i.DuplicateOf,
+		&i.ProcessingErrorCode,
+		&i.ProcessingAttempts,
+		&i.QueuedAt,
+		&i.ProcessedAt,
 	)
 	return i, err
 }
@@ -47,7 +51,7 @@ const insertClaimDocument = `-- name: InsertClaimDocument :one
 INSERT INTO claim_documents (claim_id, document_type, original_name, storage_path, mime_type,
                              file_size, checksum, processing_status, uploaded_by, page_count, duplicate_of)
 VALUES ($1, $2, $3, $4, $5, $6, $7, 'uploaded', $8, $9, $10)
-RETURNING id, claim_id, document_type, original_name, storage_path, mime_type, file_size, checksum, processing_status, created_at, updated_at, uploaded_by, page_count, duplicate_of
+RETURNING id, claim_id, document_type, original_name, storage_path, mime_type, file_size, checksum, processing_status, created_at, updated_at, uploaded_by, page_count, duplicate_of, processing_error_code, processing_attempts, queued_at, processed_at
 `
 
 type InsertClaimDocumentParams struct {
@@ -92,6 +96,10 @@ func (q *Queries) InsertClaimDocument(ctx context.Context, arg InsertClaimDocume
 		&i.UploadedBy,
 		&i.PageCount,
 		&i.DuplicateOf,
+		&i.ProcessingErrorCode,
+		&i.ProcessingAttempts,
+		&i.QueuedAt,
+		&i.ProcessedAt,
 	)
 	return i, err
 }
@@ -134,7 +142,8 @@ func (q *Queries) ListClaimDocumentChecksums(ctx context.Context, arg ListClaimD
 
 const listClaimDocuments = `-- name: ListClaimDocuments :many
 SELECT d.id, d.document_type, d.original_name, d.mime_type, d.file_size, d.page_count,
-       d.processing_status, d.duplicate_of, d.created_at, u.name AS uploader_name
+       d.processing_status, d.duplicate_of, d.created_at, u.name AS uploader_name,
+       d.processing_error_code, d.processing_attempts, d.processed_at
 FROM claim_documents d
 LEFT JOIN users u ON u.id = d.uploaded_by
 WHERE d.claim_id = $1
@@ -142,16 +151,19 @@ ORDER BY d.created_at DESC, d.id DESC
 `
 
 type ListClaimDocumentsRow struct {
-	ID               int64
-	DocumentType     string
-	OriginalName     string
-	MimeType         string
-	FileSize         int64
-	PageCount        *int32
-	ProcessingStatus string
-	DuplicateOf      *int64
-	CreatedAt        time.Time
-	UploaderName     *string
+	ID                  int64
+	DocumentType        string
+	OriginalName        string
+	MimeType            string
+	FileSize            int64
+	PageCount           *int32
+	ProcessingStatus    string
+	DuplicateOf         *int64
+	CreatedAt           time.Time
+	UploaderName        *string
+	ProcessingErrorCode *string
+	ProcessingAttempts  int32
+	ProcessedAt         *time.Time
 }
 
 func (q *Queries) ListClaimDocuments(ctx context.Context, claimID int64) ([]ListClaimDocumentsRow, error) {
@@ -174,6 +186,9 @@ func (q *Queries) ListClaimDocuments(ctx context.Context, claimID int64) ([]List
 			&i.DuplicateOf,
 			&i.CreatedAt,
 			&i.UploaderName,
+			&i.ProcessingErrorCode,
+			&i.ProcessingAttempts,
+			&i.ProcessedAt,
 		); err != nil {
 			return nil, err
 		}

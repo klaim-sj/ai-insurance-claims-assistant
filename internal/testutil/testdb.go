@@ -28,7 +28,8 @@ const lockKey = 7_420_251_125
 // Tabel aplikasi yang dikosongkan sebelum setiap test.
 var tables = []string{
 	"audit_logs", "claim_status_histories", "claim_number_counters",
-	"claim_documents", "claims", "sessions", "users",
+	"extracted_fields", "ocr_results", "claim_documents", "claims", "sessions", "users",
+	"river_job", "river_leader", "river_queue",
 }
 
 var (
@@ -73,6 +74,12 @@ func DB(t *testing.T) *pgxpool.Pool {
 		_, _ = conn.Exec(context.Background(), "SELECT pg_advisory_unlock($1)", int64(lockKey))
 		conn.Release()
 	})
+
+	// Package lain (mis. test migrasi down/up) bisa membuat ulang tabel di
+	// antara test; tutup koneksi lain agar cache prepared statement lama
+	// tidak dipakai ("cached plan must not change result type"). Koneksi
+	// lock tetap hidup sampai dilepas.
+	pool.Reset()
 
 	if !migrated {
 		if err := migrate(pool); err != nil {

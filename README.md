@@ -26,12 +26,14 @@ Acuan desain: [`docs/blueprint.pdf`](docs/blueprint.pdf).
 | 1. Fondasi | Skema DB, login/logout, session, CSRF, rate limit, RBAC, audit log, layout | ✅ |
 | 2. Claim CRUD | Buat/cari/lihat/ubah klaim, transisi status, timeline, otorisasi per klaim | ✅ |
 | 3. Dokumen | Upload privat, metadata, preview, validasi file, data uji sintetis | ✅ |
-| 4+ | OCR, validasi, AI summary, review, laporan | Berikutnya: 4. OCR |
+| 4. OCR & ekstraksi | Queue River, OCR (pdftotext/Tesseract), ekstraksi field deterministik, data terdeteksi vs data klaim, `make eval` | ✅ |
+| 5+ | Validasi lintas dokumen, AI summary, review, laporan | Berikutnya: 5. Validation |
 
 ## Stack
 
 Go 1.24 · chi · pgx/v5 · sqlc · goose · scs (session di PostgreSQL) ·
-argon2id · html/template + HTMX + Tailwind · PostgreSQL 16.
+argon2id · html/template + HTMX + Tailwind · PostgreSQL 16 ·
+River v0.30.2 (queue di PostgreSQL) · Tesseract 5 (`ind+eng`) + poppler-utils.
 
 Aset frontend (`web/static/css/app.css` hasil build Tailwind,
 `web/static/js/htmx.min.js`) di-commit dan disematkan ke binary, sehingga
@@ -46,7 +48,12 @@ internal/auth     argon2id, rate limiter, layanan login
 internal/authz    matriks role → izin → menu
 internal/audit    penulisan audit_logs
 internal/claims   layanan klaim: validasi, nomor otomatis, transisi status, daftar
-internal/documents unggah dokumen: validasi file, private storage, duplikat, akses
+internal/documents unggah dokumen: validasi file, private storage, duplikat, akses, hasil ekstraksi
+internal/ocr      OCR via os/exec: pdftotext → pdftoppm + Tesseract (TSV → confidence)
+internal/extraction ekstraksi field deterministik (tanpa LLM) + label confidence
+internal/processing job River ProcessClaimDocument (worker, retry, audit)
+internal/pii      penyamaran NIK
+cmd/eval          evaluasi OCR + ekstraksi pada sample-data (make eval)
 internal/config   konfigurasi dari environment
 internal/db       kode hasil sqlc (jangan diedit manual)
 internal/server   router, middleware (CSRF, RBAC, header keamanan), handler
@@ -60,8 +67,9 @@ web/static        CSS, htmx, app.js
 
 ## Menjalankan secara lokal
 
-Prasyarat: Go 1.24, PostgreSQL 16, `goose` dan `sqlc` terpasang di
-`$(go env GOPATH)/bin`:
+Prasyarat: Go 1.24, PostgreSQL 16, alat OCR (`apt-get install
+tesseract-ocr tesseract-ocr-ind poppler-utils`; cek dengan `make ocr-check`),
+serta `goose` dan `sqlc` terpasang di `$(go env GOPATH)/bin`:
 
 ```bash
 go install github.com/pressly/goose/v3/cmd/goose@v3.26.0
@@ -185,7 +193,8 @@ menimpa environment variable dari codespace (Makefile memuat `.env`).
 
 `.github/workflows/ci.yml` berjalan pada push ke `main` dan setiap pull
 request dengan permission minimal (`contents: read`): service PostgreSQL
-16, `gofmt` check, `go vet`, `sqlc diff`, dan `go test -race`. Kredensial
+16, alat OCR (`tesseract-ocr`, `tesseract-ocr-ind`, `poppler-utils`),
+`gofmt` check, `go vet`, `sqlc diff`, `go test -race`, dan `make eval`. Kredensial
 database CI adalah nilai sintetis yang ditulis di workflow, sedangkan
 `APP_SECRET` dan `DEMO_PASSWORD` dibuat acak per run (`openssl rand`) dan
 di-mask di log. Workflow tidak memakai secret repositori.
@@ -237,7 +246,8 @@ Unggah dan pratinjau dokumen langsung dari halaman detail klaim. Tahap ini
 
 - **Unggah**: 1–5 file PDF/JPG/PNG per kiriman, satu jenis dokumen
   (`formulir_klaim`, `identitas`, `surat_keterangan_medis`, `kuitansi`,
-  `lainnya`). Status awal `processing_status = uploaded` (siap untuk OCR).
+  `lainnya`). Status awal `processing_status = uploaded`; sejak Tahap 4
+  dokumen langsung diantrekan (`queued`) dalam transaksi yang sama.
 - **Validasi server-side** (`internal/documents/validate.go`), semua atau
   tidak sama sekali (satu file ditolak → tidak ada yang disimpan):
   - jenis file dari **magic bytes**, harus cocok dengan ekstensi (TC-02);
@@ -285,6 +295,65 @@ Unggah dan pratinjau dokumen langsung dari halaman detail klaim. Tahap ini
 - Belum ada: hapus dokumen, drag-and-drop, malware scanning (catatan untuk
   tahap *hardening*).
 
+## OCR & ekstraksi field (Tahap 4)
+
+Hasil OCR/ekstraksi adalah **bahan saran tindak lanjut petugas, bukan
+keputusan**. Status klaim tidak diubah oleh pemrosesan dokumen.
+
+- **Queue River** (`internal/processing`): job `ProcessClaimDocument`
+  dimasukkan dengan `InsertTx` di transaksi unggah (bila transaksi batal, job
+  ikut batal). Status dokumen: `uploaded → queued → processing → completed |
+  failed`. Worker berjalan di proses server (`WORKER_ENABLED`, default
+  `true`).
+  - **Tanpa duplikasi job**: `UPDATE … WHERE processing_status IN
+    ('uploaded','failed','completed')` (dokumen yang sedang antre/diproses
+    tidak dapat diantrekan lagi) + unique job River per (dokumen,
+    `queued_at`). Worker melewati job untuk dokumen yang sudah selesai.
+  - **Retry terbatas**: maks. 3 percobaan, backoff 10 dtk → 40 dtk. Kode
+    error (`OCR_TIMEOUT`, `OCR_ENGINE_ERROR`, `PDF_RENDER_FAILED`,
+    `FILE_UNAVAILABLE`, …) disimpan di `claim_documents.processing_error_code`
+    dan ditampilkan dengan pesan yang jelas. Error permanen langsung `failed`.
+  - **Proses ulang**: tombol untuk petugas (izin `documents.process`) pada
+    dokumen `failed`/`completed`; hasil lama diganti.
+- **OCR** (`internal/ocr`): PDF dicoba `pdftotext -raw` dulu; halaman tanpa
+  teks dirender `pdftoppm -r 300 -gray` lalu dibaca `tesseract -l ind+eng
+  --psm 6 tsv`. Gambar langsung Tesseract. Baris disusun ulang dari posisi
+  kata TSV agar pasangan "label : nilai" tetap sebaris. Disimpan per halaman
+  di `ocr_results` (teks, engine, engine_version, rata-rata confidence kata
+  TSV; lapisan teks PDF = 100). Binary dipanggil lewat `os/exec` **tanpa
+  shell**, dengan timeout per panggilan (`OCR_TIMEOUT`), environment minimal
+  (tanpa secret), output dibatasi, stderr dibuang, di direktori sementara
+  yang selalu dihapus.
+- **Ekstraksi deterministik** (`internal/extraction`, tanpa LLM):
+  `claimant_name`, `policy_number`, `nik`, `event_date`, `document_date`,
+  `amount`, sesuai jenis dokumen. Setiap field menyimpan nilai ternormalisasi,
+  status (`found`/`uncertain`/`not_found`), confidence, halaman, dan kutipan
+  sumber pendek. Diagnosis/detail medis **tidak** diekstrak.
+  - Label confidence: **tinggi** ≥ 85, **perlu verifikasi** 60–85,
+    **rendah** < 60 (status `uncertain`). Nilai yang formatnya tidak valid
+    juga `uncertain`. Label tidak ada → `not_found`; halaman tidak terbaca →
+    semua field `uncertain` tanpa nilai (tidak menebak, TC-05).
+- **NIK tidak pernah tersimpan utuh**: nilai field `0000********1234`; teks
+  OCR dan kutipan juga disamarkan sebelum disimpan. Dijaga juga oleh CHECK
+  constraint di database.
+- **UI**: halaman *Hasil ekstraksi* per dokumen (pratinjau di kiri, field di
+  kanan dengan halaman, kutipan, label confidence; status dipolling HTMX).
+  Pratinjau tersemat memakai `?embed=1`, satu-satunya respons yang boleh
+  di-frame, dan hanya oleh origin yang sama (`frame-ancestors 'self'`).
+  Detail klaim menampilkan **Data terdeteksi vs data klaim** (nama & nomor
+  polis dari formulir klaim terbaru). Tombol **Terapkan ke data klaim**
+  hanya untuk nilai `found` yang berbeda dan lolos validasi; nilai diambil
+  dari database (bukan input form), dengan konfirmasi, dan tercatat
+  `extracted_value_applied`. Tidak ada perubahan otomatis.
+- **Audit**: `document_processing_queued/started/completed/failed`,
+  `extracted_value_applied`, `document_viewed` (mode `extraction`). Hanya
+  ID, status, kode error, jumlah halaman/field, engine, durasi — **tanpa**
+  teks OCR atau nilai field. Log aplikasi juga hanya memuat ID dan kode error.
+- **Evaluasi**: `make eval` memproses `sample-data/` terhadap `expected.json`
+  (mode standar dan mode *scan* yang memaksa OCR) dan menulis
+  [`docs/eval/report.md`](docs/eval/report.md) + `report.json`: akurasi per
+  field, jumlah uncertain/not_found, waktu proses.
+
 ### Target Makefile
 
 | Target | Fungsi |
@@ -297,6 +366,8 @@ Unggah dan pratinjau dokumen langsung dari halaman detail klaim. Tahap ini
 | `make sqlc` | Generate ulang `internal/db` |
 | `make seed` | Seed akun demo & klaim demo |
 | `make css` | Build ulang Tailwind (CLI standalone diunduh ke `tmp/bin`) |
+| `make ocr-check` | Cek pdftotext, pdftoppm, tesseract + bahasa `ind` |
+| `make eval` | Evaluasi OCR + ekstraksi pada `sample-data/` → `docs/eval/` |
 
 ### Environment variable
 
@@ -309,6 +380,9 @@ Unggah dan pratinjau dokumen langsung dari halaman detail klaim. Tahap ini
 | `TEST_DATABASE_URL` | Database test (harus berbeda dari `DATABASE_URL`) |
 | `DEMO_PASSWORD` | Password akun demo untuk `make seed` (≥ 12 karakter) |
 | `STORAGE_DIR` | Direktori private storage dokumen, default `storage/documents` (jangan di bawah `web/static`) |
+| `WORKER_ENABLED` | Jalankan worker OCR di proses server (default `true`) |
+| `WORKER_CONCURRENCY` | Dokumen yang diproses paralel, 1–16 (default `2`) |
+| `OCR_TIMEOUT` | Batas waktu per pemanggilan binary OCR, mis. `60s` (default) |
 | `TRUST_PROXY` | `true` hanya bila di belakang reverse proxy tepercaya (IP klien dari entri paling kanan `X-Forwarded-For`) |
 
 ## Catatan keamanan & privasi
@@ -335,7 +409,8 @@ Unggah dan pratinjau dokumen langsung dari halaman detail klaim. Tahap ini
 - **Audit log** (`audit_logs`, append-only via trigger): `login_succeeded`,
   `login_failed`, `logout`, `access_denied`, `user_seeded`, `claim_created`,
   `claim_updated`, `status_changed`, `document_uploaded`, `document_viewed`,
-  `document_duplicate_detected`. Tidak menyimpan
+  `document_duplicate_detected`, `document_processing_queued/started/
+  completed/failed`, `extracted_value_applied`. Tidak menyimpan
   password, email yang dicoba, maupun IP mentah; IP disimpan sebagai
   HMAC-SHA256 (`ip_hash`) untuk korelasi.
 - **Log aplikasi**: hanya method, path (tanpa query), status, durasi. Tanpa
