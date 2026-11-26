@@ -32,7 +32,7 @@ func baseDocs() []Document {
 			found("document_date", "2026-10-15"), found("amount", "2750000"),
 		}},
 		{ID: 2, Type: "identitas", Status: "completed", PageCount: 1,
-			Pages: []Page{{Number: 1, Engine: "tesseract", WordCount: 40, MeanConfidence: fptr(88)}},
+			Pages:  []Page{{Number: 1, Engine: "tesseract", WordCount: 40, MeanConfidence: fptr(88)}},
 			Fields: []Field{found("claimant_name", "Rani Kusuma Dewi"), found("nik", "0000********0001")}},
 		{ID: 3, Type: "surat_keterangan_medis", Status: "completed", PageCount: 1, Pages: textPage(), Fields: []Field{
 			found("claimant_name", "Rani Kusuma Dewi"), found("event_date", "2026-10-10"),

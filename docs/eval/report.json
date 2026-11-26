@@ -10,7 +10,7 @@
     "DATE_INCONSISTENCY v1",
     "LOW_QUALITY_DOCUMENT v1"
   ],
-  "generated_at": "2026-11-26T07:18:51Z",
+  "generated_at": "2026-11-26T07:27:26Z",
   "extractor_version": "rules-v1",
   "engine_versions": [
     "pdftotext 24.02.0",
@@ -200,7 +200,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 9,
+          "duration_ms": 12,
           "fields": [
             {
               "field": "claimant_name",
@@ -254,7 +254,7 @@
           "page_mean_confidence": [
             86.85
           ],
-          "duration_ms": 312,
+          "duration_ms": 359,
           "fields": [
             {
               "field": "claimant_name",
@@ -284,7 +284,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 10,
+          "duration_ms": 13,
           "fields": [
             {
               "field": "claimant_name",
@@ -314,7 +314,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 13,
+          "duration_ms": 10,
           "fields": [
             {
               "field": "claimant_name",
@@ -352,7 +352,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 11,
+          "duration_ms": 9,
           "fields": [
             {
               "field": "claimant_name",
@@ -460,7 +460,7 @@
           "page_mean_confidence": [
             27.08
           ],
-          "duration_ms": 430,
+          "duration_ms": 466,
           "fields": [
             {
               "field": "claimant_name",
@@ -488,7 +488,7 @@
           "page_mean_confidence": [
             100
           ],
-          "duration_ms": 10,
+          "duration_ms": 14,
           "fields": [
             {
               "field": "claimant_name",
@@ -580,7 +580,7 @@
       "wrong_count": 0,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 806
+      "total_ms": 894
     },
     {
       "mode": "scan",
@@ -761,7 +761,7 @@
           "page_mean_confidence": [
             93.51
           ],
-          "duration_ms": 1296,
+          "duration_ms": 1394,
           "fields": [
             {
               "field": "claimant_name",
@@ -815,7 +815,7 @@
           "page_mean_confidence": [
             86.85
           ],
-          "duration_ms": 357,
+          "duration_ms": 307,
           "fields": [
             {
               "field": "claimant_name",
@@ -845,7 +845,7 @@
           "page_mean_confidence": [
             94.28
           ],
-          "duration_ms": 1089,
+          "duration_ms": 1144,
           "fields": [
             {
               "field": "claimant_name",
@@ -875,7 +875,7 @@
           "page_mean_confidence": [
             93.3
           ],
-          "duration_ms": 903,
+          "duration_ms": 1141,
           "fields": [
             {
               "field": "claimant_name",
@@ -913,7 +913,7 @@
           "page_mean_confidence": [
             93.35
           ],
-          "duration_ms": 1131,
+          "duration_ms": 1339,
           "fields": [
             {
               "field": "claimant_name",
@@ -967,7 +967,7 @@
           "page_mean_confidence": [
             93.55
           ],
-          "duration_ms": 1436,
+          "duration_ms": 1349,
           "fields": [
             {
               "field": "claimant_name",
@@ -1021,7 +1021,7 @@
           "page_mean_confidence": [
             27.08
           ],
-          "duration_ms": 349,
+          "duration_ms": 416,
           "fields": [
             {
               "field": "claimant_name",
@@ -1049,7 +1049,7 @@
           "page_mean_confidence": [
             92.74
           ],
-          "duration_ms": 1061,
+          "duration_ms": 1199,
           "fields": [
             {
               "field": "claimant_name",
@@ -1141,7 +1141,7 @@
       "wrong_count": 0,
       "unreadable_abstained": 2,
       "unreadable_guessed": 0,
-      "total_ms": 7622
+      "total_ms": 8289
     }
   ]
 }

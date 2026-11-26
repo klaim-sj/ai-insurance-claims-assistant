@@ -3,7 +3,7 @@
 > Dataset: `sample-data/` (SELURUHNYA SINTETIS). Hasil ekstraksi dan temuan adalah bahan
 > verifikasi petugas ("perlu ditinjau"), bukan keputusan klaim. NIK hanya ditampilkan tersamar.
 
-- Dibuat: 2026-11-26T07:18:51Z
+- Dibuat: 2026-11-26T07:27:26Z
 - Extractor: `rules-v1`; engine: pdftotext 24.02.0, tesseract 5.3.4
 - Aturan validasi: MISSING_DOCUMENT v1, MISSING_FIELD v1, NAME_MISMATCH v1, POLICY_MISMATCH v1, DATE_INCONSISTENCY v1, LOW_QUALITY_DOCUMENT v1
 - Ambang confidence: tinggi ≥ 85, perlu verifikasi ≥ 60, di bawahnya rendah (uncertain)
@@ -57,7 +57,7 @@ Precision **100.0%** · recall **100.0%** · TP 6 · FP 0 · FN 0 · evidence le
 
 ### Ekstraksi field
 
-Akurasi keseluruhan **100.0%** (25 field) · uncertain 0 · not_found 0 · salah baca 0 · dokumen tidak terbaca: tidak menebak 2 / menebak 0 · total waktu 806 ms
+Akurasi keseluruhan **100.0%** (25 field) · uncertain 0 · not_found 0 · salah baca 0 · dokumen tidak terbaca: tidak menebak 2 / menebak 0 · total waktu 894 ms
 
 | Field | Total | Benar | Salah | Uncertain | Not found | Akurasi |
 |---|---:|---:|---:|---:|---:|---:|
@@ -70,14 +70,14 @@ Akurasi keseluruhan **100.0%** (25 field) · uncertain 0 · not_found 0 · salah
 
 | File | Engine | Conf. halaman | Waktu (ms) | Hasil |
 |---|---|---|---:|---|
-| `01_formulir_klaim.pdf` | pdftotext | 100.0 | 9 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
-| `02_identitas.png` | tesseract | 86.8 | 312 | claimant_name=benar; nik=benar |
-| `03_surat_keterangan_medis.pdf` | pdftotext | 100.0 | 10 | claimant_name=benar; event_date=benar |
-| `04_kuitansi.pdf` | pdftotext | 100.0 | 13 | claimant_name=benar; document_date=benar; amount=benar |
-| `b_formulir_klaim_nama_beda.pdf` | pdftotext | 100.0 | 11 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
+| `01_formulir_klaim.pdf` | pdftotext | 100.0 | 12 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
+| `02_identitas.png` | tesseract | 86.8 | 359 | claimant_name=benar; nik=benar |
+| `03_surat_keterangan_medis.pdf` | pdftotext | 100.0 | 13 | claimant_name=benar; event_date=benar |
+| `04_kuitansi.pdf` | pdftotext | 100.0 | 10 | claimant_name=benar; document_date=benar; amount=benar |
+| `b_formulir_klaim_nama_beda.pdf` | pdftotext | 100.0 | 9 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
 | `c_formulir_klaim_polis_beda.pdf` | pdftotext | 100.0 | 11 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
-| `d_identitas_buram.png` | tesseract | 27.1 | 430 | claimant_name=tidak_menebak; nik=tidak_menebak |
-| `e_kuitansi_tanggal_sebelum_kejadian.pdf` | pdftotext | 100.0 | 10 | claimant_name=benar; document_date=benar; amount=benar |
+| `d_identitas_buram.png` | tesseract | 27.1 | 466 | claimant_name=tidak_menebak; nik=tidak_menebak |
+| `e_kuitansi_tanggal_sebelum_kejadian.pdf` | pdftotext | 100.0 | 14 | claimant_name=benar; document_date=benar; amount=benar |
 
 ## Mode scan
 
@@ -123,7 +123,7 @@ Precision **100.0%** · recall **100.0%** · TP 6 · FP 0 · FN 0 · evidence le
 
 ### Ekstraksi field
 
-Akurasi keseluruhan **100.0%** (25 field) · uncertain 0 · not_found 0 · salah baca 0 · dokumen tidak terbaca: tidak menebak 2 / menebak 0 · total waktu 7622 ms
+Akurasi keseluruhan **100.0%** (25 field) · uncertain 0 · not_found 0 · salah baca 0 · dokumen tidak terbaca: tidak menebak 2 / menebak 0 · total waktu 8289 ms
 
 | Field | Total | Benar | Salah | Uncertain | Not found | Akurasi |
 |---|---:|---:|---:|---:|---:|---:|
@@ -136,14 +136,14 @@ Akurasi keseluruhan **100.0%** (25 field) · uncertain 0 · not_found 0 · salah
 
 | File | Engine | Conf. halaman | Waktu (ms) | Hasil |
 |---|---|---|---:|---|
-| `01_formulir_klaim.pdf` | tesseract | 93.5 | 1296 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
-| `02_identitas.png` | tesseract | 86.8 | 357 | claimant_name=benar; nik=benar |
-| `03_surat_keterangan_medis.pdf` | tesseract | 94.3 | 1089 | claimant_name=benar; event_date=benar |
-| `04_kuitansi.pdf` | tesseract | 93.3 | 903 | claimant_name=benar; document_date=benar; amount=benar |
-| `b_formulir_klaim_nama_beda.pdf` | tesseract | 93.3 | 1131 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
-| `c_formulir_klaim_polis_beda.pdf` | tesseract | 93.5 | 1436 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
-| `d_identitas_buram.png` | tesseract | 27.1 | 349 | claimant_name=tidak_menebak; nik=tidak_menebak |
-| `e_kuitansi_tanggal_sebelum_kejadian.pdf` | tesseract | 92.7 | 1061 | claimant_name=benar; document_date=benar; amount=benar |
+| `01_formulir_klaim.pdf` | tesseract | 93.5 | 1394 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
+| `02_identitas.png` | tesseract | 86.8 | 307 | claimant_name=benar; nik=benar |
+| `03_surat_keterangan_medis.pdf` | tesseract | 94.3 | 1144 | claimant_name=benar; event_date=benar |
+| `04_kuitansi.pdf` | tesseract | 93.3 | 1141 | claimant_name=benar; document_date=benar; amount=benar |
+| `b_formulir_klaim_nama_beda.pdf` | tesseract | 93.3 | 1339 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
+| `c_formulir_klaim_polis_beda.pdf` | tesseract | 93.5 | 1349 | claimant_name=benar; policy_number=benar; nik=benar; event_date=benar; amount=benar |
+| `d_identitas_buram.png` | tesseract | 27.1 | 416 | claimant_name=tidak_menebak; nik=tidak_menebak |
+| `e_kuitansi_tanggal_sebelum_kejadian.pdf` | tesseract | 92.7 | 1199 | claimant_name=benar; document_date=benar; amount=benar |
 
 ## Catatan
 

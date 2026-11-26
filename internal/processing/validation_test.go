@@ -91,27 +91,37 @@ func TestRiverValidationEndToEnd(t *testing.T) {
 	e.upload(documents.TypeMedicalNote, "m.pdf", e.sample("03_surat_keterangan_medis.pdf"))
 	e.upload(documents.TypeReceipt, "k.pdf", e.sample("04_kuitansi.pdf"))
 
+	// Dokumen diunggah satu per satu, sehingga validasi dapat berjalan lebih
+	// dari sekali (setiap kali tidak ada dokumen yang tertunda). Temuan
+	// sementara (mis. MISSING_DOCUMENT sebelum dokumen lain diunggah)
+	// harus otomatis resolved pada validasi berikutnya; tidak boleh ada
+	// baris ganda untuk kondisi yang sama.
 	deadline := time.Now().Add(60 * time.Second)
+	var open []string
 	for time.Now().Before(deadline) {
 		cl, err := e.q.GetClaim(context.Background(), e.claim.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cl.Status == string(claims.StatusNeedsReview) {
-			fs, err := e.q.ListClaimFindings(context.Background(), e.claim.ID)
-			if err != nil {
-				t.Fatal(err)
+		fs, err := e.q.ListClaimFindings(context.Background(), e.claim.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		open = open[:0]
+		for _, f := range fs {
+			if f.Status == "open" {
+				open = append(open, f.FindingCode)
+			} else if f.Status != "resolved" {
+				// Temuan sementara hanya boleh resolved (oleh sistem), mis.
+				// MISSING_DOCUMENT, atau NAME_MISMATCH vs data klaim yang
+				// berganti acuan ke identitas setelah identitas diproses.
+				t.Fatalf("temuan non-open tak terduga: %s %s", f.FindingCode, f.Status)
 			}
-			if len(fs) != 1 || fs[0].FindingCode != validation.CodeNameMismatch {
-				var got []string
-				for _, f := range fs {
-					got = append(got, f.FindingCode)
-				}
-				t.Fatalf("harap tepat NAME_MISMATCH, dapat %v", got)
-			}
+		}
+		if cl.Status == string(claims.StatusNeedsReview) && len(open) == 1 && open[0] == validation.CodeNameMismatch {
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	t.Fatal("validasi otomatis tidak memindahkan klaim ke needs_review")
+	t.Fatalf("validasi otomatis tidak mencapai kondisi akhir (needs_review + NAME_MISMATCH); open = %v", open)
 }

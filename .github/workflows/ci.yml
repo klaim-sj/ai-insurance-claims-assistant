@@ -98,7 +98,7 @@ jobs:
       - name: go test -race
         run: go test -race -count=1 ./...
 
-      - name: make eval (OCR & ekstraksi pada sample-data)
+      - name: make eval (OCR, ekstraksi & temuan; dataset utama + holdout)
         run: make eval
 
   devcontainer:
