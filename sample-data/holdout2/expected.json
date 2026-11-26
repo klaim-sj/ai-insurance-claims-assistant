@@ -1,0 +1,283 @@
+{
+  "_disclaimer": "SELURUH DATA SINTETIS/FIKTIF. Set HOLDOUT2: dibekukan sebelum perbaikan Tahap 5.5 dijalankan terhadapnya. Temuan bersifat 'perlu ditinjau', bukan keputusan klaim.",
+  "_generator": "scripts/gen_holdout2_data.py",
+  "_semantics": "Ekspektasi memakai semantik Tahap 5.5: field tidak terbaca pada dokumen kualitas rendah = NEEDS_MANUAL_VERIFICATION, bukan MISSING_FIELD.",
+  "claim": {
+    "policy_number": "POL-UJI-3315",
+    "claimant_name": "Siti Aminah Rahayu",
+    "product_type": "Kesehatan (simulasi)",
+    "received_at": "2026-08-20"
+  },
+  "evaluation_date": "2026-08-20",
+  "files": {
+    "g01_formulir_foto_hp.jpg": {
+      "document_type": "formulir_klaim",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Siti Aminah Rahayu",
+        "nik": "0000030303920003",
+        "policy_number": "POL-UJI-3315",
+        "incident_date": "2026-08-14",
+        "total_amount": 3125000
+      }
+    },
+    "g02_identitas_resolusi_rendah.png": {
+      "document_type": "identitas",
+      "mime_type": "image/png",
+      "pages": 1,
+      "fields": {
+        "full_name": "Siti Aminah Rahayu",
+        "nik": "0000030303920003"
+      }
+    },
+    "g03_resume_medis_scan_2hal.pdf": {
+      "document_type": "surat_keterangan_medis",
+      "mime_type": "application/pdf",
+      "pages": 2,
+      "fields": {
+        "patient_name": "Siti Aminah Rahayu",
+        "admission_date": "2026-08-14"
+      },
+      "note": "PDF hasil scan tanpa lapisan teks; data pasien di halaman 2."
+    },
+    "g04_bukti_bayar_latar_kuning.jpg": {
+      "document_type": "kuitansi",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "payer_name": "Siti Aminah Rahayu",
+        "receipt_date": "2026-08-16",
+        "total_amount": 3125000
+      }
+    },
+    "g05_formulir_dua_kolom_nama_gelar.jpg": {
+      "document_type": "formulir_klaim",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Hj. S. Aminah Rahayu, S.E.",
+        "nik": "0000030303920003",
+        "policy_number": "POL-UJI-3315",
+        "incident_date": "2026-08-14",
+        "total_amount": 3125000
+      }
+    },
+    "g06_bukti_bayar_tanggal_sebelum.png": {
+      "document_type": "kuitansi",
+      "mime_type": "image/png",
+      "pages": 1,
+      "fields": {
+        "payer_name": "Siti Aminah Rahayu",
+        "receipt_date": "2026-08-10",
+        "total_amount": 3125000
+      }
+    },
+    "g07_resume_medis_nama_beda.pdf": {
+      "document_type": "surat_keterangan_medis",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "patient_name": "Siti Nurhaliza",
+        "admission_date": "2026-08-14"
+      }
+    },
+    "g08_formulir_tabel_polis_beda.png": {
+      "document_type": "formulir_klaim",
+      "mime_type": "image/png",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Siti Aminah Rahayu",
+        "nik": "0000030303920003",
+        "policy_number": "POL-UJI-3351",
+        "incident_date": "2026-08-14",
+        "total_amount": 3125000
+      }
+    },
+    "g09_identitas_gelap_buram.jpg": {
+      "document_type": "identitas",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "full_name": "Siti Aminah Rahayu",
+        "nik": "0000030303920003"
+      },
+      "expected_unreadable": true,
+      "note": "Sengaja gelap dan buram; sistem tidak boleh menebak."
+    }
+  },
+  "scenarios": [
+    {
+      "id": "ga",
+      "title": "Set lengkap (foto HP, resolusi rendah, scan 2 halaman, latar warna)",
+      "upload": [
+        "g01_formulir_foto_hp.jpg",
+        "g02_identitas_resolusi_rendah.png",
+        "g03_resume_medis_scan_2hal.pdf",
+        "g04_bukti_bayar_latar_kuning.jpg"
+      ],
+      "expected_findings": []
+    },
+    {
+      "id": "gb",
+      "title": "Formulir dua kolom, nama bergelar dan disingkat",
+      "upload": [
+        "g05_formulir_dua_kolom_nama_gelar.jpg",
+        "g02_identitas_resolusi_rendah.png",
+        "g03_resume_medis_scan_2hal.pdf",
+        "g04_bukti_bayar_latar_kuning.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "NAME_MISMATCH",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "g05_formulir_dua_kolom_nama_gelar.jpg",
+              "page": 1,
+              "field": "claimant_name"
+            },
+            {
+              "file": "g02_identitas_resolusi_rendah.png",
+              "page": 1,
+              "field": "full_name"
+            }
+          ]
+        }
+      ],
+      "note": "Diharapkan severity rendah (kemungkinan singkatan)."
+    },
+    {
+      "id": "gc",
+      "title": "Tanggal bukti bayar sebelum tanggal kejadian",
+      "upload": [
+        "g01_formulir_foto_hp.jpg",
+        "g02_identitas_resolusi_rendah.png",
+        "g03_resume_medis_scan_2hal.pdf",
+        "g06_bukti_bayar_tanggal_sebelum.png"
+      ],
+      "expected_findings": [
+        {
+          "code": "DATE_INCONSISTENCY",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "g06_bukti_bayar_tanggal_sebelum.png",
+              "page": 1,
+              "field": "receipt_date"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gd",
+      "title": "Nama pasien di resume medis berbeda",
+      "upload": [
+        "g01_formulir_foto_hp.jpg",
+        "g02_identitas_resolusi_rendah.png",
+        "g07_resume_medis_nama_beda.pdf",
+        "g04_bukti_bayar_latar_kuning.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "NAME_MISMATCH",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "g07_resume_medis_nama_beda.pdf",
+              "page": 1,
+              "field": "patient_name"
+            },
+            {
+              "file": "g02_identitas_resolusi_rendah.png",
+              "page": 1,
+              "field": "full_name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ge",
+      "title": "Nomor polis formulir tabel berbeda",
+      "upload": [
+        "g08_formulir_tabel_polis_beda.png",
+        "g02_identitas_resolusi_rendah.png",
+        "g03_resume_medis_scan_2hal.pdf",
+        "g04_bukti_bayar_latar_kuning.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "POLICY_MISMATCH",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "g08_formulir_tabel_polis_beda.png",
+              "page": 1,
+              "field": "policy_number"
+            },
+            {
+              "source": "claim_record",
+              "field": "policy_number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gf",
+      "title": "Identitas gelap dan buram",
+      "upload": [
+        "g01_formulir_foto_hp.jpg",
+        "g09_identitas_gelap_buram.jpg",
+        "g03_resume_medis_scan_2hal.pdf",
+        "g04_bukti_bayar_latar_kuning.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "LOW_QUALITY_DOCUMENT",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "g09_identitas_gelap_buram.jpg",
+              "page": 1,
+              "field": null
+            }
+          ]
+        },
+        {
+          "code": "NEEDS_MANUAL_VERIFICATION",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "g09_identitas_gelap_buram.jpg",
+              "page": 1,
+              "field": "full_name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gg",
+      "title": "Hanya identitas dan bukti bayar",
+      "upload": [
+        "g02_identitas_resolusi_rendah.png",
+        "g04_bukti_bayar_latar_kuning.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "MISSING_DOCUMENT",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "source": "checklist",
+              "field": "document_type"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
