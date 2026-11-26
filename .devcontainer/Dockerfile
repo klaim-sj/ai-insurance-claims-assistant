@@ -1,5 +1,6 @@
 # Lingkungan pengembangan GitHub Codespaces: Go 1.24 + klien PostgreSQL
-# (pg_isready dipakai oleh target `make db-check`).
+# (pg_isready dipakai oleh target `make db-check`) + alat OCR Tahap 4
+# (tesseract-ocr + bahasa Indonesia, poppler-utils untuk pdftotext/pdftoppm).
 FROM mcr.microsoft.com/devcontainers/go:1-1.24-bookworm
 
 # Base image membawa sumber apt pihak ketiga Yarn (dl.yarnpkg.com) yang kunci
@@ -10,7 +11,8 @@ FROM mcr.microsoft.com/devcontainers/go:1-1.24-bookworm
 # hapus juga di sini.
 RUN rm -f /etc/apt/sources.list.d/yarn*.list /usr/share/keyrings/yarn-archive-keyring.gpg \
     && apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends postgresql-client \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        postgresql-client tesseract-ocr tesseract-ocr-ind tesseract-ocr-eng poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Jangan pernah mengunduh toolchain Go lain secara otomatis.

@@ -524,3 +524,122 @@ func (s *Service) List(ctx context.Context, a Actor, f Filter) (Page, error) {
 	}
 	return p, nil
 }
+
+// Field klaim yang boleh diisi dari nilai terdeteksi.
+const (
+	DetectedClaimantName = "claimant_name"
+	DetectedPolicyNumber = "policy_number"
+)
+
+var (
+	// ErrDetectedNotFound: field terekstrak tidak ada atau bukan milik klaim.
+	ErrDetectedNotFound = errors.New("nilai terdeteksi tidak ditemukan")
+	// ErrDetectedNotApplicable: field tidak boleh diterapkan (status bukan
+	// found, bukan dari formulir klaim, atau bukan nama/nomor polis).
+	ErrDetectedNotApplicable = errors.New("nilai terdeteksi tidak dapat diterapkan")
+	// ErrDetectedNoChange: nilai sudah sama dengan data klaim.
+	ErrDetectedNoChange = errors.New("nilai sudah sama dengan data klaim")
+)
+
+// ValidDetectedValue melaporkan apakah nilai terdeteksi lolos validasi
+// data klaim (dipakai UI untuk menampilkan tombol "Terapkan").
+func ValidDetectedValue(field, v string) bool {
+	in := Input{ClaimantName: "Nama Uji", PolicyNumber: "POL-DEMO-0000", ProductType: ProductHealthSim,
+		ReceivedAt: "2020-01-01", AssignedTo: "1"}
+	switch field {
+	case DetectedClaimantName:
+		in.ClaimantName = v
+	case DetectedPolicyNumber:
+		in.PolicyNumber = v
+	default:
+		return false
+	}
+	_, verr := validate(in, time.Now())
+	return verr == nil
+}
+
+// ApplyDetectedValue menerapkan nilai terdeteksi (nama atau nomor polis
+// dari formulir klaim) ke data klaim atas konfirmasi petugas. Nilai diambil
+// dari database, bukan dari input pengguna, dan divalidasi dengan aturan
+// yang sama seperti formulir ubah data. Status klaim tidak berubah. Audit
+// extracted_value_applied tidak memuat nilai (disamarkan).
+func (s *Service) ApplyDetectedValue(ctx context.Context, a Actor, claimID, fieldID int64) (db.Claim, string, error) {
+	if !authz.Can(a.Role, authz.PermClaimsEdit) {
+		return db.Claim{}, "", s.deny(ctx, a, &claimID, "apply_detected_value")
+	}
+	var out db.Claim
+	var key string
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := db.New(tx)
+		cur, err := q.GetClaimForUpdate(ctx, claimID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if !authz.CanAccessClaim(a.Role, a.UserID, cur.AssignedTo) {
+			return authz.ErrForbidden
+		}
+		if Status(cur.Status) == StatusClosed {
+			return ErrClosed
+		}
+		f, err := q.GetExtractedFieldForClaim(ctx, db.GetExtractedFieldForClaimParams{ID: fieldID, ClaimID: claimID})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrDetectedNotFound
+		}
+		if err != nil {
+			return err
+		}
+		key = f.FieldKey
+		if f.DocumentType != "formulir_klaim" || f.ProcessingStatus != "completed" ||
+			f.Status != "found" || f.FieldValue == nil ||
+			(f.FieldKey != DetectedClaimantName && f.FieldKey != DetectedPolicyNumber) {
+			return ErrDetectedNotApplicable
+		}
+
+		in := Input{
+			ClaimantName: cur.ClaimantName, PolicyNumber: cur.PolicyNumber, ProductType: cur.ProductType,
+			ReceivedAt: cur.ReceivedAt.In(Location).Format(DateLayout),
+		}
+		if cur.AssignedTo != nil {
+			in.AssignedTo = strconv.FormatInt(*cur.AssignedTo, 10)
+		}
+		if f.FieldKey == DetectedClaimantName {
+			in.ClaimantName = *f.FieldValue
+		} else {
+			in.PolicyNumber = *f.FieldValue
+		}
+		v, verr := validate(in, s.Now())
+		if verr != nil {
+			return verr
+		}
+		if v.name == cur.ClaimantName && v.policy == cur.PolicyNumber {
+			return ErrDetectedNoChange
+		}
+		c, err := q.UpdateClaimFields(ctx, db.UpdateClaimFieldsParams{
+			ID: claimID, PolicyNumber: v.policy, ClaimantName: v.name, ProductType: cur.ProductType,
+			ReceivedAt: cur.ReceivedAt, AssignedTo: cur.AssignedTo,
+		})
+		if err != nil {
+			return fmt.Errorf("terapkan nilai terdeteksi: %w", err)
+		}
+		if err := audit.NewLogger(q).Record(ctx, audit.Entry{
+			UserID: &a.UserID, EntityType: audit.EntityClaim, EntityID: &claimID,
+			Action: audit.ActionExtractedValueApplied,
+			Before: map[string]any{f.FieldKey: Masked},
+			After: map[string]any{
+				f.FieldKey: Masked, "field": f.FieldKey, "document_id": f.DocumentID,
+				"extracted_field_id": f.ID, "confidence": f.Confidence,
+			},
+		}); err != nil {
+			return err
+		}
+		out = c
+		return nil
+	})
+	if errors.Is(err, authz.ErrForbidden) {
+		return db.Claim{}, "", s.deny(ctx, a, &claimID, "apply_detected_value")
+	}
+	return out, key, err
+}

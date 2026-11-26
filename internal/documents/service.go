@@ -1,6 +1,7 @@
 // Package documents menangani unggah, penyimpanan privat, dan akses dokumen
-// klaim. Tahap ini hanya menyimpan file dan metadata (processing_status =
-// uploaded); OCR/ekstraksi dikerjakan di tahap berikutnya.
+// klaim, serta hasil OCR/ekstraksi (Tahap 4). Setelah unggah, dokumen
+// langsung diantrekan untuk diproses (uploaded → queued) dalam transaksi
+// yang sama dengan penyimpanan metadata.
 //
 // Authorization dicek di sini (lapis service) selain di middleware HTTP.
 // Audit tidak pernah memuat isi file, nama file asli, atau checksum lengkap.
@@ -69,7 +70,13 @@ func (t Type) Label() string {
 }
 
 // ProcessingStatus dokumen.
-const StatusUploaded = "uploaded"
+const (
+	StatusUploaded   = "uploaded"
+	StatusQueued     = "queued"
+	StatusProcessing = "processing"
+	StatusCompleted  = "completed"
+	StatusFailed     = "failed"
+)
 
 // StatusLabel untuk UI.
 func StatusLabel(s string) string {
@@ -152,6 +159,15 @@ type Document struct {
 	DuplicateOf  *int64
 	UploaderName string
 	CreatedAt    time.Time
+	// ErrorCode: kode error pemrosesan terakhir (bila ada).
+	ErrorCode   string
+	Attempts    int
+	ProcessedAt *time.Time
+}
+
+// Queue memasukkan job pemrosesan dokumen di dalam transaksi pemanggil.
+type Queue interface {
+	EnqueueTx(ctx context.Context, tx pgx.Tx, documentID int64, queuedAt time.Time) error
 }
 
 // Service menangani dokumen klaim.
@@ -161,7 +177,15 @@ type Service struct {
 	audit   *audit.Logger
 	storage *Storage
 	log     *slog.Logger
+	queue   Queue
 }
+
+// SetQueue memasang antrean pemrosesan. Tanpa antrean, dokumen tetap
+// berstatus uploaded dan proses ulang ditolak.
+func (s *Service) SetQueue(q Queue) { s.queue = q }
+
+// Storage mengembalikan private storage (dipakai worker).
+func (s *Service) Storage() *Storage { return s.storage }
 
 // NewService membuat Service.
 func NewService(pool *pgxpool.Pool, storage *Storage, logger *slog.Logger) *Service {
@@ -223,6 +247,11 @@ func (s *Service) List(ctx context.Context, a claims.Actor, claimID int64) ([]Do
 		if r.UploaderName != nil {
 			d.UploaderName = *r.UploaderName
 		}
+		if r.ProcessingErrorCode != nil {
+			d.ErrorCode = *r.ProcessingErrorCode
+		}
+		d.Attempts = int(r.ProcessingAttempts)
+		d.ProcessedAt = r.ProcessedAt
 		out = append(out, d)
 	}
 	return out, nil
@@ -371,6 +400,11 @@ func (s *Service) Upload(ctx context.Context, a claims.Actor, up Upload) ([]db.C
 				Action: audit.ActionDocumentUploaded, After: withClaim(after, up.ClaimID),
 			}); err != nil {
 				return err
+			}
+			if s.queue != nil {
+				if d, err = s.enqueue(ctx, tx, q, a, d, "upload"); err != nil {
+					return err
+				}
 			}
 			docs = append(docs, d)
 		}

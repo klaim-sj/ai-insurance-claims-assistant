@@ -17,6 +17,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/authz"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/extraction"
 )
 
 const ctxClaimID ctxKey = 100
@@ -421,6 +422,16 @@ type claimDetailData struct {
 	Upload        uploadState
 	MaxFiles      int
 	MaxFileSizeMB int
+
+	// Tahap 4: data terdeteksi vs data klaim.
+	Comparisons []comparisonRow
+	CanProcess  bool
+}
+
+// comparisonRow adalah satu baris "data terdeteksi vs data klaim".
+type comparisonRow struct {
+	documents.Comparison
+	CanApply bool
 }
 
 type detailOpts struct {
@@ -459,6 +470,22 @@ func (s *Server) renderDetailWith(w http.ResponseWriter, r *http.Request, status
 			s.claimServiceError(w, r, err)
 			return
 		}
+		cmp, err := s.docs.Compare(ctx, a, det.Claim)
+		if err != nil {
+			s.claimServiceError(w, r, err)
+			return
+		}
+		for _, c := range cmp {
+			row := comparisonRow{Comparison: c}
+			// Tombol "Terapkan" hanya untuk nilai berstatus found yang
+			// berbeda dan lolos validasi data klaim; tidak ada perubahan
+			// otomatis.
+			row.CanApply = data.CanEdit && c.Detected != nil && !c.Match &&
+				c.Detected.Status == extraction.StatusFound &&
+				claims.ValidDetectedValue(string(c.Key), c.Detected.Value)
+			data.Comparisons = append(data.Comparisons, row)
+		}
+		data.CanProcess = authz.Can(u.Role, authz.PermDocumentsProcess) && det.Status != claims.StatusClosed
 	}
 	s.render(w, r, status, "claim_detail", pageData{
 		Title: det.Claim.ClaimNumber, Active: "/claims", Error: o.Error, Data: data,

@@ -21,6 +21,9 @@ func TestMatrix(t *testing.T) {
 		{RoleAdmin, PermReportsView, true},
 		{RoleAdmin, PermUsersManage, true},
 		{RoleAdmin, PermClaimsView, false},
+		{RoleClaimsOfficer, PermDocumentsProcess, true},
+		{RoleSupervisor, PermDocumentsProcess, true},
+		{RoleAdmin, PermDocumentsProcess, false},
 		{Role("hacker"), PermDashboardView, false},
 		{Role(""), PermDashboardView, false},
 	}

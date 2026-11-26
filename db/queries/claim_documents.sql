@@ -11,7 +11,8 @@ WHERE id = $1 AND claim_id = $2;
 
 -- name: ListClaimDocuments :many
 SELECT d.id, d.document_type, d.original_name, d.mime_type, d.file_size, d.page_count,
-       d.processing_status, d.duplicate_of, d.created_at, u.name AS uploader_name
+       d.processing_status, d.duplicate_of, d.created_at, u.name AS uploader_name,
+       d.processing_error_code, d.processing_attempts, d.processed_at
 FROM claim_documents d
 LEFT JOIN users u ON u.id = d.uploaded_by
 WHERE d.claim_id = $1

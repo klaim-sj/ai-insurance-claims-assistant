@@ -1,0 +1,124 @@
+{{define "processing_status"}}
+<div id="processing-status" aria-live="polite"
+     {{if not .R.Final}}hx-get="/claims/{{.ClaimID}}/documents/{{.R.ID}}/status?shown={{.R.Status}}" hx-trigger="every 3s" hx-swap="outerHTML"{{end}}>
+  <p class="flex flex-wrap items-center gap-2 text-sm">
+    <span class="font-medium text-slate-700">Status pemrosesan:</span>
+    <span class="rounded-full px-2.5 py-0.5 text-xs font-medium {{docStatusClass .R.Status}}">{{docStatusLabel .R.Status}}</span>
+    {{if .R.Attempts}}<span class="text-xs text-slate-500">percobaan {{.R.Attempts}}</span>{{end}}
+    {{if .R.ProcessedAt}}<span class="text-xs text-slate-500">· {{datetime (deref .R.ProcessedAt)}}</span>{{end}}
+  </p>
+  {{if not .R.Final}}
+  <p class="mt-1 text-xs text-slate-500">{{if .R.QueuedAt}}Masuk antrean {{datetime (deref .R.QueuedAt)}}. {{end}}Halaman ini diperbarui otomatis.</p>
+  {{end}}
+  {{if .ErrorLabel}}
+  <p role="alert" class="mt-2 rounded-md border {{if eq .R.Status "failed"}}border-red-200 bg-red-50 text-red-800{{else}}border-amber-200 bg-amber-50 text-amber-900{{end}} px-3 py-2 text-sm">
+    {{if eq .R.Status "failed"}}Pemrosesan gagal{{else}}Percobaan sebelumnya gagal; akan dicoba lagi otomatis{{end}}: {{.ErrorLabel}}
+    <span class="text-xs">(kode {{.R.ErrorCode}})</span>
+    {{if eq .R.Status "failed"}}<br><span class="text-xs">Periksa dokumen secara manual atau gunakan “Proses ulang”.</span>{{end}}
+  </p>
+  {{end}}
+</div>
+{{end}}
+
+{{define "content"}}
+{{with .Data}}
+<nav aria-label="Breadcrumb" class="text-sm">
+  <a href="/claims" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Klaim</a> /
+  <a href="/claims/{{.ClaimID}}#documents" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">{{.ClaimNumber}}</a> /
+  Dokumen #{{.R.ID}}
+</nav>
+<div class="mt-2 flex flex-wrap items-center justify-between gap-4">
+  <h1 class="text-2xl font-bold tracking-tight">{{docTypeLabel .R.Type}} <span class="text-base font-normal text-slate-500">· dokumen #{{.R.ID}}</span></h1>
+  {{if .CanProcess}}
+  <form method="post" action="/claims/{{.ClaimID}}/documents/{{.R.ID}}/process" data-confirm="Proses ulang dokumen ini? Hasil ekstraksi sebelumnya akan diganti.">
+    <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+    <button type="submit" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Proses ulang</button>
+  </form>
+  {{end}}
+</div>
+<p class="mt-1 max-w-3xl text-xs text-slate-500">Hasil OCR dan ekstraksi otomatis adalah bahan verifikasi petugas, bukan keputusan klaim. Selalu cocokkan dengan pratinjau dokumen. Confidence adalah sinyal kualitas pembacaan, bukan kebenaran isi klaim.</p>
+
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <section aria-labelledby="preview-heading" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <h2 id="preview-heading" class="text-base font-semibold">Pratinjau</h2>
+    <div class="mt-3">
+      {{if eq .R.MIME "application/pdf"}}
+      <iframe src="/claims/{{.ClaimID}}/documents/{{.R.ID}}?embed=1" title="Pratinjau dokumen #{{.R.ID}}" class="h-[70vh] w-full rounded border border-slate-200"></iframe>
+      {{else}}
+      <img src="/claims/{{.ClaimID}}/documents/{{.R.ID}}?embed=1" alt="Pratinjau dokumen #{{.R.ID}} ({{docTypeLabel .R.Type}})" class="max-h-[70vh] w-full rounded border border-slate-200 object-contain">
+      {{end}}
+    </div>
+    <p class="mt-2 text-xs"><a href="/claims/{{.ClaimID}}/documents/{{.R.ID}}" target="_blank" rel="noopener noreferrer" class="rounded text-indigo-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">Buka di tab baru</a></p>
+  </section>
+
+  <div class="space-y-6">
+    <section aria-labelledby="fields-heading" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <h2 id="fields-heading" class="text-base font-semibold">Field terekstrak</h2>
+      <div class="mt-3">{{template "processing_status" .}}</div>
+
+      {{if .R.LowQualityPages}}
+      <div role="alert" class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p class="font-medium">Kualitas dokumen rendah: teks halaman {{range $i, $p := .R.LowQualityPages}}{{if $i}}, {{end}}{{$p}}{{end}} tidak terbaca dengan andal.</p>
+        <p class="mt-1 text-xs">Sistem tidak menebak isinya. Saran tindak lanjut: periksa pratinjau secara manual atau minta unggah ulang dokumen yang lebih jelas.</p>
+      </div>
+      {{end}}
+      {{if .R.Fields}}
+      <div class="mt-4 overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead>
+            <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+              <th scope="col" class="py-2 pr-3">Field</th>
+              <th scope="col" class="py-2 pr-3">Nilai</th>
+              <th scope="col" class="py-2 pr-3">Confidence</th>
+              <th scope="col" class="py-2">Sumber</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {{range .R.Fields}}
+            <tr class="align-top">
+              <th scope="row" class="py-2 pr-3 text-left font-medium">{{.Label}}</th>
+              <td class="py-2 pr-3">
+                {{if .Value}}<span class="font-mono">{{.Value}}</span>{{else}}<span class="text-slate-400">—</span>{{end}}
+                <span class="block text-xs {{if eq (print .Status) "found"}}text-slate-500{{else}}font-medium text-amber-800{{end}}">{{fieldStatusLabel .Status}}</span>
+              </td>
+              <td class="whitespace-nowrap py-2 pr-3">
+                {{if .ConfidenceLabel}}<span class="rounded-full px-2 py-0.5 text-xs font-medium {{confClass .ConfidenceLabel}}">{{.ConfidenceLabel}}</span>
+                <span class="block text-xs text-slate-500">{{pct .Confidence}}/100</span>{{else}}<span class="text-slate-400">—</span>{{end}}
+              </td>
+              <td class="py-2 text-xs text-slate-600">
+                {{if .Page}}Halaman {{.Page}}{{end}}
+                {{if .Excerpt}}<q class="mt-1 block break-words font-mono text-slate-700">{{.Excerpt}}</q>{{end}}
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs text-slate-500">Label confidence: <strong>tinggi</strong> ≥ {{printf "%.0f" .High}}, <strong>perlu verifikasi</strong> {{printf "%.0f" .Min}}–{{printf "%.0f" .High}}, <strong>rendah</strong> &lt; {{printf "%.0f" .Min}} (ditandai tidak pasti). Field yang tidak ditemukan tidak ditebak. NIK selalu disamarkan; diagnosis/detail medis tidak diekstrak.</p>
+      {{else if .R.Final}}
+      <p class="mt-4 text-sm text-slate-600">Belum ada hasil ekstraksi untuk dokumen ini.</p>
+      {{end}}
+    </section>
+
+    {{if .R.OCR}}
+    <section aria-labelledby="ocr-heading" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <h2 id="ocr-heading" class="text-base font-semibold">Hasil OCR per halaman</h2>
+      <ul class="mt-3 space-y-3 text-sm">
+        {{range .R.OCR}}
+        <li>
+          <details class="rounded border border-slate-200 p-2">
+            <summary class="cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+              Halaman {{.Number}} · {{.Engine}} {{.EngineVersion}} · {{.WordCount}} kata · confidence rata-rata {{pct .MeanConfidence}}
+            </summary>
+            <pre class="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words bg-slate-50 p-2 font-mono text-xs text-slate-700">{{.Text}}</pre>
+          </details>
+        </li>
+        {{end}}
+      </ul>
+      <p class="mt-2 text-xs text-slate-500">Teks OCR mentah (NIK disamarkan). Isi dokumen tidak boleh disalin ke catatan atau sistem lain.</p>
+    </section>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}

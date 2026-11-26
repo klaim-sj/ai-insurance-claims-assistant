@@ -33,20 +33,24 @@ type Claim struct {
 }
 
 type ClaimDocument struct {
-	ID               int64
-	ClaimID          int64
-	DocumentType     string
-	OriginalName     string
-	StoragePath      string
-	MimeType         string
-	FileSize         int64
-	Checksum         string
-	ProcessingStatus string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	UploadedBy       *int64
-	PageCount        *int32
-	DuplicateOf      *int64
+	ID                  int64
+	ClaimID             int64
+	DocumentType        string
+	OriginalName        string
+	StoragePath         string
+	MimeType            string
+	FileSize            int64
+	Checksum            string
+	ProcessingStatus    string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	UploadedBy          *int64
+	PageCount           *int32
+	DuplicateOf         *int64
+	ProcessingErrorCode *string
+	ProcessingAttempts  int32
+	QueuedAt            *time.Time
+	ProcessedAt         *time.Time
 }
 
 type ClaimNumberCounter struct {
@@ -62,6 +66,31 @@ type ClaimStatusHistory struct {
 	ChangedBy *int64
 	Reason    *string
 	CreatedAt time.Time
+}
+
+type ExtractedField struct {
+	ID               int64
+	DocumentID       int64
+	FieldKey         string
+	FieldValue       *string
+	Status           string
+	Confidence       *float64
+	PageNumber       *int32
+	SourceExcerpt    *string
+	ExtractorVersion string
+	CreatedAt        time.Time
+}
+
+type OcrResult struct {
+	ID             int64
+	DocumentID     int64
+	PageNumber     int32
+	ExtractedText  string
+	Engine         string
+	EngineVersion  string
+	MeanConfidence *float64
+	WordCount      int32
+	ProcessedAt    time.Time
 }
 
 type Session struct {

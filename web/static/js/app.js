@@ -34,6 +34,16 @@
     box.replaceChildren(p);
   });
 
+  // Form dengan data-confirm meminta konfirmasi sebelum dikirim
+  // (mis. menerapkan nilai terdeteksi, proses ulang dokumen).
+  document.addEventListener("submit", function (evt) {
+    var form = evt.target;
+    var msg = form && form.getAttribute && form.getAttribute("data-confirm");
+    if (msg && !window.confirm(msg)) {
+      evt.preventDefault();
+    }
+  });
+
   // Toggle menu navigasi pada layar kecil (dapat dipakai dengan keyboard).
   document.addEventListener("DOMContentLoaded", function () {
     var btn = document.querySelector("[data-menu-toggle]");

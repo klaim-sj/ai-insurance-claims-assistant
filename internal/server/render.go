@@ -12,6 +12,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/authz"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/extraction"
 )
 
 // pageData adalah data untuk seluruh template.
@@ -35,14 +36,15 @@ type templates struct {
 }
 
 var pageFiles = map[string][]string{
-	"login":        {"layout/base.html", "pages/login.html"},
-	"error":        {"layout/base.html", "pages/error.html"},
-	"dashboard":    {"layout/base.html", "layout/app.html", "pages/dashboard.html"},
-	"placeholder":  {"layout/base.html", "layout/app.html", "pages/placeholder.html"},
-	"forbidden":    {"layout/base.html", "layout/app.html", "pages/forbidden.html"},
-	"claims_list":  {"layout/base.html", "layout/app.html", "pages/claims_list.html"},
-	"claim_form":   {"layout/base.html", "layout/app.html", "pages/claim_form.html"},
-	"claim_detail": {"layout/base.html", "layout/app.html", "pages/claim_detail.html"},
+	"login":           {"layout/base.html", "pages/login.html"},
+	"error":           {"layout/base.html", "pages/error.html"},
+	"dashboard":       {"layout/base.html", "layout/app.html", "pages/dashboard.html"},
+	"placeholder":     {"layout/base.html", "layout/app.html", "pages/placeholder.html"},
+	"forbidden":       {"layout/base.html", "layout/app.html", "pages/forbidden.html"},
+	"claims_list":     {"layout/base.html", "layout/app.html", "pages/claims_list.html"},
+	"claim_form":      {"layout/base.html", "layout/app.html", "pages/claim_form.html"},
+	"claim_detail":    {"layout/base.html", "layout/app.html", "pages/claim_detail.html"},
+	"document_result": {"layout/base.html", "layout/app.html", "pages/document_result.html"},
 }
 
 var bulan = [...]string{"Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"}
@@ -70,7 +72,54 @@ var templateFuncs = template.FuncMap{
 		}
 		return fmt.Sprintf("%d B", n)
 	},
-	"inc": func(i int) int { return i + 1 },
+	"inc":           func(i int) int { return i + 1 },
+	"docErrorLabel": documents.ErrorLabel,
+	"fieldStatusLabel": func(st extraction.Status) string {
+		switch st {
+		case extraction.StatusFound:
+			return "Terdeteksi"
+		case extraction.StatusUncertain:
+			return "Tidak pasti — verifikasi manual"
+		case extraction.StatusNotFound:
+			return "Tidak ditemukan"
+		}
+		return string(st)
+	},
+	// confClass: kelas badge label confidence.
+	"confClass": func(label string) string {
+		switch label {
+		case "tinggi":
+			return "bg-emerald-100 text-emerald-800"
+		case "perlu verifikasi":
+			return "bg-amber-100 text-amber-900"
+		case "rendah":
+			return "bg-red-100 text-red-800"
+		}
+		return "bg-slate-100 text-slate-700"
+	},
+	"docStatusClass": func(st string) string {
+		switch st {
+		case "completed":
+			return "bg-emerald-100 text-emerald-800"
+		case "failed":
+			return "bg-red-100 text-red-800"
+		case "queued", "processing":
+			return "bg-sky-100 text-sky-800"
+		}
+		return "bg-slate-100 text-slate-700"
+	},
+	"pct": func(v *float64) string {
+		if v == nil {
+			return "—"
+		}
+		return fmt.Sprintf("%.0f", *v)
+	},
+	"deref": func(v *time.Time) time.Time {
+		if v == nil {
+			return time.Time{}
+		}
+		return *v
+	},
 }
 
 func parseTemplates(fsys fs.FS) (*templates, error) {

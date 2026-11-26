@@ -29,10 +29,10 @@ else
   TW_ARCH := x64
 endif
 
-.PHONY: help run test vet migrate-up migrate-down migrate-status migrate-test sqlc seed css db-check
+.PHONY: help run test vet migrate-up migrate-down migrate-status migrate-test sqlc seed css db-check eval ocr-check
 
 help:
-	@echo "Target: run test vet migrate-up migrate-down migrate-status migrate-test sqlc seed css db-check"
+	@echo "Target: run test vet migrate-up migrate-down migrate-status migrate-test sqlc seed css db-check eval ocr-check"
 
 db-check:
 	@pg_isready >/dev/null || (echo "PostgreSQL belum jalan. Jalankan: service postgresql start" && exit 1)
@@ -65,6 +65,17 @@ migrate-test: db-check
 
 sqlc:
 	$(SQLC) generate
+
+# Alat OCR (tesseract-ocr, tesseract-ocr-ind, poppler-utils) wajib untuk worker & eval.
+ocr-check:
+	@command -v pdftotext >/dev/null && command -v pdftoppm >/dev/null && command -v tesseract >/dev/null \
+		|| (echo "Pasang: apt-get install tesseract-ocr tesseract-ocr-ind poppler-utils" && exit 1)
+	@tesseract --list-langs 2>/dev/null | grep -qx ind || (echo "Bahasa tesseract 'ind' belum terpasang (tesseract-ocr-ind)" && exit 1)
+
+# Evaluasi OCR + ekstraksi pada sample-data/ terhadap expected.json;
+# laporan ditulis ke docs/eval/ (tidak butuh database).
+eval: ocr-check
+	go run ./cmd/eval -samples sample-data -out docs/eval
 
 seed: db-check
 	go run ./cmd/seed

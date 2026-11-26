@@ -21,6 +21,10 @@ import (
 func (s *Server) documentRoutes(r chi.Router) {
 	r.With(s.requirePerm(authz.PermDocumentsUpload)).Post("/documents", s.documentUpload)
 	r.With(s.requirePerm(authz.PermDocumentsView)).Get("/documents/{docID:[0-9]+}", s.documentView)
+	r.With(s.requirePerm(authz.PermDocumentsView)).Get("/documents/{docID:[0-9]+}/hasil", s.documentResult)
+	r.With(s.requirePerm(authz.PermDocumentsView)).Get("/documents/{docID:[0-9]+}/status", s.documentStatus)
+	r.With(s.requirePerm(authz.PermDocumentsProcess)).Post("/documents/{docID:[0-9]+}/process", s.documentReprocess)
+	r.With(s.requirePerm(authz.PermClaimsEdit)).Post("/detected/{fieldID:[0-9]+}/apply", s.applyDetected)
 }
 
 // uploadState adalah keadaan formulir unggah setelah POST yang gagal.
@@ -137,6 +141,8 @@ func (s *Server) documentView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	download := r.URL.Query().Get("download") == "1"
+	// embed=1: pratinjau di dalam halaman hasil ekstraksi (frame same-origin).
+	embed := !download && r.URL.Query().Get("embed") == "1"
 
 	d, f, err := s.docs.Open(ctx, actorOf(u), claimID, docID, download)
 	switch {
@@ -163,12 +169,16 @@ func (s *Server) documentView(w http.ResponseWriter, r *http.Request) {
 	// Gambar dibuka dalam sandbox penuh. PDF tidak diberi "sandbox" karena
 	// penampil PDF bawaan browser menolak merender dokumen sandbox; konten
 	// tetap dibatasi default-src 'none'.
-	csp := "default-src 'none'; frame-ancestors 'none'"
+	ancestors, xfo := "'none'", "DENY"
+	if embed {
+		ancestors, xfo = "'self'", "SAMEORIGIN"
+	}
+	csp := "default-src 'none'; frame-ancestors " + ancestors
 	if d.MimeType != documents.MIMEPDF {
 		csp += "; img-src 'self'; sandbox"
 	}
 	h.Set("Content-Security-Policy", csp)
-	h.Set("X-Frame-Options", "DENY")
+	h.Set("X-Frame-Options", xfo)
 	h.Set("Cross-Origin-Resource-Policy", "same-origin")
 	// ServeContent: dukungan Range untuk penampil PDF; modtime nol agar tidak
 	// ada Last-Modified/caching kondisional.

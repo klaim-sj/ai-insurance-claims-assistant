@@ -19,6 +19,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/claims"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/config"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/processing"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/web"
 )
 
@@ -40,7 +41,10 @@ type Options struct {
 	Claims *claims.Service
 	// Documents opsional; bila nil dibuat dari Pool dan Config.StorageDir.
 	Documents *documents.Service
-	Logger    *slog.Logger
+	// Queue: antrean pemrosesan dokumen. Bila nil, dibuat client River
+	// insert-only dari Pool (job diproses oleh worker terpisah).
+	Queue  documents.Queue
+	Logger *slog.Logger
 	// UploadReadTimeout: batas baca body route unggah; 0 berarti
 	// DefaultUploadReadTimeout.
 	UploadReadTimeout time.Duration
@@ -88,6 +92,14 @@ func New(o Options) (*Server, error) {
 		}
 		o.Documents = documents.NewService(o.Pool, st, o.Logger)
 	}
+	if o.Queue == nil {
+		rc, err := processing.NewClient(o.Pool, processing.ClientConfig{Logger: o.Logger})
+		if err != nil {
+			return nil, err
+		}
+		o.Queue = rc.Queue
+	}
+	o.Documents.SetQueue(o.Queue)
 	tmpl, err := parseTemplates(web.Templates())
 	if err != nil {
 		return nil, err
