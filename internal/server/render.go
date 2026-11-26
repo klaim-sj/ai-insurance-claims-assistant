@@ -237,6 +237,8 @@ func findingCodeLabel(code string) string {
 		return "Tanggal tidak konsisten"
 	case validation.CodeLowQualityDocument:
 		return "Kualitas dokumen rendah"
+	case validation.CodeNeedsManualVerification:
+		return "Perlu verifikasi manual"
 	}
 	return code
 }

@@ -16,6 +16,7 @@ sql:
       - "migrations/00008_claim_documents_upload.sql"
       - "migrations/00009_ocr_extraction.sql"
       - "migrations/00012_validation.sql"
+      - "migrations/00013_validation_v2.sql"
     queries: "db/queries"
     gen:
       go:

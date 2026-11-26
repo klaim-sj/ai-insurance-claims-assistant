@@ -38,7 +38,15 @@ type ExecConfig struct {
 	ForceOCR bool
 	// PSM: page segmentation mode Tesseract; default "6" (satu blok teks
 	// seragam), paling stabil untuk dokumen formulir "label : nilai".
+	// Dapat berisi beberapa mode dipisah koma (mis. "6,4,11"): setiap mode
+	// dijalankan dan hasil dengan skor tertinggi (jumlah confidence kata
+	// alfanumerik) dipakai. Lebih tahan tata letak tabel, tetapi waktu
+	// OCR bertambah sebanding jumlah mode.
 	PSM string
+	// Preprocess: pra-pemrosesan gambar sebelum Tesseract (gambar unggahan
+	// dan halaman PDF hasil render). nil = DefaultPreprocess(). Lapisan
+	// teks PDF tidak disentuh.
+	Preprocess *PreprocessOptions
 }
 
 // Exec memanggil pdftotext, pdftoppm, dan tesseract lewat os/exec tanpa
@@ -49,7 +57,35 @@ type Exec struct {
 
 	mu       sync.Mutex
 	versions map[string]string
+	psms     []string
 }
+
+// DefaultPSM adalah daftar PSM produksi: 6 (blok seragam) dan 11 (teks
+// jarang; jauh lebih baik untuk tabel/formulir yang garisnya dihapus).
+// Hasil dengan skor tertinggi dipakai.
+const DefaultPSM = "6,11"
+
+// parsePSMs mengurai daftar PSM; nilai tidak valid diabaikan (default "6").
+func parsePSMs(s string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, p := range strings.Split(s, ",") {
+		p = strings.TrimSpace(p)
+		n, err := strconv.Atoi(p)
+		if err != nil || n < 0 || n > 13 || seen[p] {
+			continue
+		}
+		seen[p] = true
+		out = append(out, p)
+	}
+	if len(out) == 0 {
+		out = []string{"6"}
+	}
+	return out
+}
+
+// PSMs mengembalikan daftar PSM yang dipakai.
+func (e *Exec) PSMs() []string { return append([]string(nil), e.psms...) }
 
 // NewExec membuat engine dengan nilai default untuk field kosong.
 func NewExec(cfg ExecConfig) *Exec {
@@ -72,12 +108,16 @@ func NewExec(cfg ExecConfig) *Exec {
 		cfg.DPI = 300
 	}
 	if cfg.PSM == "" {
-		cfg.PSM = "6"
+		cfg.PSM = DefaultPSM
 	}
 	if cfg.MaxPages <= 0 {
 		cfg.MaxPages = 50
 	}
-	return &Exec{cfg: cfg, versions: map[string]string{}}
+	if cfg.Preprocess == nil {
+		p := DefaultPreprocess()
+		cfg.Preprocess = &p
+	}
+	return &Exec{cfg: cfg, versions: map[string]string{}, psms: parsePSMs(cfg.PSM)}
 }
 
 // maxOutput membatasi stdout yang dibaca dari binary (16 MB).
@@ -253,18 +293,61 @@ func (e *Exec) ocrPDFPage(ctx context.Context, dir string, n int) (Page, error) 
 	return p, nil
 }
 
+// tesseract menjalankan pra-pemrosesan (bila aktif) lalu Tesseract untuk
+// setiap PSM yang dikonfigurasi, dan memilih hasil berskor tertinggi.
 func (e *Exec) tesseract(ctx context.Context, dir, file string) (Page, error) {
-	out, err := e.run(ctx, dir, e.cfg.Tesseract, file, "stdout", "-l", e.cfg.Lang, "--psm", e.cfg.PSM, "tsv")
-	if err != nil {
-		return Page{}, err
+	input, pre := file, false
+	if !e.cfg.Preprocess.Disabled {
+		if raw, err := os.ReadFile(filepath.Join(dir, file)); err == nil {
+			if out, _, err := Preprocess(raw, *e.cfg.Preprocess); err == nil {
+				name := "pre-" + file + ".png"
+				if err := os.WriteFile(filepath.Join(dir, name), out, 0o600); err == nil {
+					input, pre = name, true
+				}
+			}
+			// Gagal dekode/terlalu besar: pakai file asli (Tesseract
+			// melaporkan error sendiri bila memang tidak terbaca).
+		}
 	}
-	lines, err := ParseTSV(out)
-	if err != nil {
-		return Page{}, &Error{Code: CodeEngineError, Retryable: true, Err: err}
+	var best Page
+	bestScore := -1.0
+	for _, psm := range e.psms {
+		out, err := e.run(ctx, dir, e.cfg.Tesseract, input, "stdout", "-l", e.cfg.Lang, "--psm", psm, "tsv")
+		if err != nil {
+			return Page{}, err
+		}
+		lines, err := ParseTSV(out)
+		if err != nil {
+			return Page{}, &Error{Code: CodeEngineError, Retryable: true, Err: err}
+		}
+		p := Page{Engine: EngineTesseract, EngineVersion: e.Version(ctx, EngineTesseract), Lines: lines, PSM: psm, Preprocessed: pre}
+		p.MeanConfidence, p.WordCount = meanConfidence(lines)
+		if s := pageScore(lines); s > bestScore {
+			best, bestScore = p, s
+		}
 	}
-	p := Page{Engine: EngineTesseract, EngineVersion: e.Version(ctx, EngineTesseract), Lines: lines}
-	p.MeanConfidence, p.WordCount = meanConfidence(lines)
-	return p, nil
+	if pre {
+		_ = os.Remove(filepath.Join(dir, input))
+	}
+	return best, nil
+}
+
+// scoreMinConf: kata di bawah confidence ini tidak dihitung dalam skor
+// pemilihan PSM (sisa garis/noise biasanya terbaca dengan confidence
+// rendah dan tidak boleh "memenangkan" pemilihan).
+const scoreMinConf = 70
+
+// pageScore: jumlah confidence (0–1) kata alfanumerik yang terbaca yakin.
+func pageScore(lines []Line) float64 {
+	var s float64
+	for _, l := range lines {
+		for _, w := range l.Words {
+			if countAlnum(w.Text) > 0 && w.Conf >= scoreMinConf {
+				s += w.Conf / 100
+			}
+		}
+	}
+	return s
 }
 
 // ParseTSV mengurai output TSV Tesseract menjadi baris kata (level 5).

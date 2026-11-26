@@ -321,10 +321,10 @@ def expected():
                      "signal": "confidence OCR rendah / teks tidak terbaca"},
                 ],
             }, {
-                "code": "MISSING_FIELD",
-                "category": "kelengkapan_field",
+                "code": "NEEDS_MANUAL_VERIFICATION",
+                "category": "verifikasi_manual",
                 "status": "perlu_ditinjau",
-                "description": "Field wajib identitas (nama, NIK) tidak terbaca dengan pasti.",
+                "description": "Field wajib identitas (nama, NIK) tidak terbaca dengan pasti; petugas mencocokkan langsung dengan dokumen (Tahap 5.5: sebelumnya MISSING_FIELD).",
                 "evidence": [
                     {"file": "d_identitas_buram.png", "page": 1, "field": "full_name", "value": None,
                      "signal": "uncertain"},

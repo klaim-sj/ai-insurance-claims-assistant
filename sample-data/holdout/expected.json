@@ -216,7 +216,7 @@
           ]
         },
         {
-          "code": "MISSING_FIELD",
+          "code": "NEEDS_MANUAL_VERIFICATION",
           "status": "perlu_ditinjau",
           "evidence": [
             {
@@ -226,7 +226,8 @@
             }
           ]
         }
-      ]
+      ],
+      "note": "Tahap 5.5: field tidak terbaca pada dokumen kualitas rendah = NEEDS_MANUAL_VERIFICATION (sebelumnya MISSING_FIELD)."
     },
     {
       "id": "hf",

@@ -164,11 +164,34 @@ func main() {
 	timeout := flag.Duration("timeout", 60*time.Second, "batas waktu per pemanggilan binary OCR")
 	dataset := flag.String("dataset", "utama", "nama dataset di laporan")
 	holdout := flag.Bool("holdout", false, "dataset holdout (tidak dipakai menyetel aturan)")
+	flag.StringVar(&ocrPSM, "psm", "", "daftar PSM Tesseract dipisah koma (kosong = default produksi)")
+	flag.StringVar(&ocrBinarize, "binarize", "", "none|otsu|sauvola (kosong = default produksi)")
+	flag.BoolVar(&ocrNoPre, "no-preprocess", false, "matikan pra-pemrosesan gambar")
 	flag.Parse()
 	if err := run(*samples, *out, *dataset, *holdout, *timeout); err != nil {
 		fmt.Fprintln(os.Stderr, "eval gagal:", err)
 		os.Exit(1)
 	}
+}
+
+// Flag eksperimen OCR (default = konfigurasi produksi).
+var (
+	ocrPSM, ocrBinarize string
+	ocrNoPre            bool
+)
+
+func execConfig(timeout time.Duration, force bool) ocr.ExecConfig {
+	cfg := ocr.ExecConfig{Timeout: timeout, ForceOCR: force, PSM: ocrPSM}
+	if cfg.PSM == "" {
+		cfg.PSM = ocr.DefaultPSM
+	}
+	p := ocr.DefaultPreprocess()
+	p.Disabled = ocrNoPre
+	if ocrBinarize != "" {
+		p.Binarize = ocr.Binarize(ocrBinarize)
+	}
+	cfg.Preprocess = &p
+	return cfg
 }
 
 func run(samples, outDir, dataset string, holdout bool, timeout time.Duration) error {
@@ -186,11 +209,11 @@ func run(samples, outDir, dataset string, holdout bool, timeout time.Duration) e
 	}
 
 	ctx := context.Background()
-	std := ocr.NewExec(ocr.ExecConfig{Timeout: timeout})
+	std := ocr.NewExec(execConfig(timeout, false))
 	if err := std.Check(ctx); err != nil {
 		return err
 	}
-	scan := ocr.NewExec(ocr.ExecConfig{Timeout: timeout, ForceOCR: true})
+	scan := ocr.NewExec(execConfig(timeout, true))
 
 	names := make([]string, 0, len(exp.Files))
 	for n := range exp.Files {

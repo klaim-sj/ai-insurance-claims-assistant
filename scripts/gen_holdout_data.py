@@ -11,6 +11,7 @@ email (@example.com), fasilitas kesehatan, dan dokter. Setiap dokumen
 bertanda watermark "CONTOH - DATA SINTETIS".
 
     python3 -I scripts/gen_holdout_data.py
+    python3 -I scripts/gen_holdout_data.py --expected-only   # hanya expected.json
 
 Kebutuhan: Python 3, reportlab, Pillow. Noise memakai seed tetap.
 """
@@ -369,7 +370,8 @@ def expected():
          "expected_findings": [fnd("DATE_INCONSISTENCY", ev("h07_kwitansi_tanggal_depan.png", "receipt_date"))]},
         {"id": "he", "title": "Identitas noise berat", "upload": swap(base[1], "h08_identitas_noise_berat.jpg"),
          "expected_findings": [fnd("LOW_QUALITY_DOCUMENT", ev("h08_identitas_noise_berat.jpg", None)),
-                               fnd("MISSING_FIELD", ev("h08_identitas_noise_berat.jpg", "full_name"))]},
+                               fnd("NEEDS_MANUAL_VERIFICATION", ev("h08_identitas_noise_berat.jpg", "full_name"))],
+         "note": "Tahap 5.5: field tidak terbaca pada dokumen kualitas rendah = NEEDS_MANUAL_VERIFICATION (sebelumnya MISSING_FIELD)."},
         {"id": "hf", "title": "Nama pasien di surat dokter berbeda", "upload": swap(base[2], "h09_surat_dokter_nama_beda_scan.jpg"),
          "expected_findings": [fnd("NAME_MISMATCH", ev("h09_surat_dokter_nama_beda_scan.jpg", "patient_name"),
                                    ev("h02_identitas_kartu_mono.png", "full_name"))]},
@@ -389,6 +391,15 @@ def expected():
 def main():
     os.makedirs(OUT, exist_ok=True)
     p = lambda n: os.path.join(OUT, n)
+    if "--expected-only" not in sys.argv[1:]:
+        build_files(p)
+    with open(p("expected.json"), "w", encoding="utf-8") as f:
+        json.dump(expected(), f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    print("sample-data/holdout/ dibuat", file=sys.stderr)
+
+
+def build_files(p):
     formulir_scan(p("h01_formulir_klaim_tabel_scan.jpg"), NAME_WITH_TITLE, CLAIM["policy_number"], seed=101, angle=2.2)
     identitas_scan(p("h02_identitas_kartu_mono.png"), seed=102, angle=-3.0, noise=8)
     surat_medis_pdf(p("h03_surat_keterangan_dokter.pdf"), PERSON["full_name"])
@@ -398,10 +409,6 @@ def main():
     kuitansi_scan(p("h07_kwitansi_tanggal_depan.png"), PERSON["full_name"], FUTURE_RECEIPT_DATE, seed=107, angle=3.5, fmt="PNG")
     identitas_scan(p("h08_identitas_noise_berat.jpg"), seed=108, angle=4.0, noise=55, blur=2.5, contrast=0.45, fmt="JPEG")
     surat_medis_scan(p("h09_surat_dokter_nama_beda_scan.jpg"), NAME_OTHER, seed=109, angle=-1.8)
-    with open(p("expected.json"), "w", encoding="utf-8") as f:
-        json.dump(expected(), f, ensure_ascii=False, indent=2)
-        f.write("\n")
-    print("sample-data/holdout/ dibuat", file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ import (
 )
 
 // Version dicatat di extracted_fields.extractor_version.
-const Version = "rules-v1"
+const Version = "rules-v2"
 
 // Ambang confidence (0–100). Nilai awal untuk prototipe; diukur ulang
 // dengan `make eval` pada dataset sintetis, bukan probabilitas klaim benar.
@@ -121,17 +121,6 @@ func KeysFor(docType string) []Key {
 	return AllKeys
 }
 
-// labels: label yang dikenali per field, dalam urutan prioritas. Label
-// dinormalisasi (huruf kecil, tanpa tanda baca selain "/").
-var labels = map[Key][]string{
-	KeyClaimantName: {"nama peserta", "nama pemohon", "nama tertanggung", "nama lengkap", "nama pasien", "diterima dari", "nama pembayar", "nama"},
-	KeyPolicyNumber: {"nomor polis", "no polis", "nomor polis peserta", "polis"},
-	KeyNIK:          {"nik", "nomor induk kependudukan", "no nik"},
-	KeyEventDate:    {"tanggal kejadian / masuk", "tanggal kejadian", "tgl kejadian", "tanggal masuk", "tanggal masuk perawatan", "tanggal rawat"},
-	KeyDocumentDate: {"tanggal kuitansi", "tanggal surat", "tanggal dokumen", "tanggal pembayaran", "tanggal"},
-	KeyAmount:       {"total biaya diajukan", "total biaya", "total", "jumlah total", "total pembayaran", "jumlah dibayar", "jumlah"},
-}
-
 // candidate adalah pasangan label–nilai pada satu baris.
 type candidate struct {
 	page     int
@@ -203,41 +192,160 @@ func normLabel(s string) string {
 }
 
 func candidates(pages []ocr.Page) []candidate {
+	multi := multiWordLabels()
 	var out []candidate
 	for _, p := range pages {
 		pc := 0.0
 		if p.MeanConfidence != nil {
 			pc = *p.MeanConfidence
 		}
-		for i, l := range p.Lines {
-			label, valueWords, ok := splitLine(l)
-			if !ok {
-				continue
-			}
-			// Nilai di baris berikut bila baris label berakhir dengan ":".
-			if len(valueWords) == 0 && i+1 < len(p.Lines) {
-				next := p.Lines[i+1]
-				if !strings.ContainsAny(next.Text(), ":;") {
-					valueWords = next.Words
-				}
-			}
-			if len(valueWords) == 0 {
-				continue
+		add := func(label, rawLabel string, ws []ocr.Word) {
+			ws = cleanValueWords(ws)
+			if len(ws) == 0 {
+				return
 			}
 			out = append(out, candidate{
-				page: p.Number, label: normLabel(label), rawLabel: label, value: joinWords(valueWords),
-				conf: meanConf(valueWords), pageConf: pc,
+				page: p.Number, label: label, rawLabel: rawLabel, value: joinWords(ws),
+				conf: meanConf(ws), pageConf: pc,
 			})
+		}
+		for i, l := range p.Lines {
+			label, valueWords, ok := splitLine(l)
+			if ok {
+				// Nilai di baris berikut bila baris label berakhir dengan pemisah.
+				if len(cleanValueWords(valueWords)) == 0 && i+1 < len(p.Lines) {
+					next := p.Lines[i+1]
+					if !strings.ContainsAny(next.Text(), ":;|") {
+						valueWords = next.Words
+					}
+				}
+				add(normLabel(label), label, valueWords)
+				if multi[normLabel(label)] > 0 {
+					continue
+				}
+			}
+			// Tanpa pemisah (mis. tabel yang garisnya dihapus, atau PSM
+			// yang tidak membaca ":"): label multikata di awal baris. Label
+			// satu kata ("tanggal", "total") hanya bila kata berikutnya
+			// diawali angka/"Rp", agar "Tanggal Keluar ..." tidak terbaca
+			// sebagai tanggal dokumen.
+			if lbl, raw, rest, ok := prefixLabel(l, multi); ok {
+				add(lbl, raw, rest)
+			}
 		}
 	}
 	return out
 }
 
-// splitLine memisahkan "Label : nilai". OCR kadang membaca ":" sebagai ";".
+// prefixLabels: label ternormalisasi → jumlah kata.
+func multiWordLabels() map[string]int {
+	m := map[string]int{}
+	for _, ls := range active.Load().Fields {
+		for _, l := range ls {
+			m[l] = len(strings.Fields(l))
+		}
+	}
+	return m
+}
+
+// numericStart: kata diawali angka atau "Rp" (nilai tanggal/nominal).
+func numericStart(s string) bool {
+	s = strings.TrimLeft(s, valueTrim)
+	if s == "" {
+		return false
+	}
+	if r := []rune(s)[0]; unicode.IsDigit(r) {
+		return true
+	}
+	return len(s) >= 2 && strings.EqualFold(s[:2], "rp")
+}
+
+// prefixLabel mencari label terpanjang di awal baris (lihat candidates).
+func prefixLabel(l ocr.Line, multi map[string]int) (label, raw string, rest []ocr.Word, ok bool) {
+	var toks []string
+	var idx []int // indeks kata asal untuk setiap token
+	for i, w := range l.Words {
+		for _, t := range strings.Fields(normLabel(w.Text)) {
+			toks = append(toks, t)
+			idx = append(idx, i)
+		}
+	}
+	best, bestLabel := -1, ""
+	for n := 1; n <= len(toks) && n <= 6; n++ {
+		cand := strings.Join(toks[:n], " ")
+		lbl := ""
+		if multi[cand] == n {
+			lbl = cand
+		} else if n >= 2 {
+			for l, words := range multi {
+				if words == n && labelMatch(cand, l) && (lbl == "" || l < lbl) {
+					lbl = l // deterministik: label terkecil secara leksikal
+				}
+			}
+		}
+		if lbl == "" {
+			continue
+		}
+		// Label harus berakhir di batas kata asal.
+		if n < len(toks) && idx[n] == idx[n-1] {
+			continue
+		}
+		if n == 1 && (idx[0]+1 >= len(l.Words) || !numericStart(l.Words[idx[0]+1].Text)) {
+			continue
+		}
+		best, bestLabel = n, lbl
+	}
+	if best < 0 {
+		return "", "", nil, false
+	}
+	last := idx[best-1]
+	var rawParts []string
+	for _, w := range l.Words[:last+1] {
+		rawParts = append(rawParts, w.Text)
+	}
+	return bestLabel, strings.Join(rawParts, " "), l.Words[last+1:], true
+}
+
+// valueTrim: karakter tepi nilai yang merupakan sisa pemisah/garis tabel
+// atau tanda kutip hasil OCR.
+const valueTrim = "\"“”'‘’|:;—–-_~=,."
+
+// cleanValueWords membuang kata tanpa huruf/angka di awal/akhir nilai
+// dan memangkas sisa pemisah di tepi.
+func cleanValueWords(ws []ocr.Word) []ocr.Word {
+	alnum := func(s string) bool {
+		for _, r := range s {
+			if unicode.IsLetter(r) || unicode.IsDigit(r) {
+				return true
+			}
+		}
+		return false
+	}
+	for len(ws) > 0 && !alnum(ws[0].Text) {
+		ws = ws[1:]
+	}
+	for len(ws) > 0 && !alnum(ws[len(ws)-1].Text) {
+		ws = ws[:len(ws)-1]
+	}
+	if len(ws) == 0 {
+		return nil
+	}
+	out := append([]ocr.Word(nil), ws...)
+	out[0].Text = strings.TrimLeft(out[0].Text, valueTrim)
+	// Titik akhir dipertahankan bila bagian singkatan di tengah nama.
+	out[len(out)-1].Text = strings.TrimRight(out[len(out)-1].Text, valueTrim)
+	if out[0].Text == "" || out[len(out)-1].Text == "" {
+		return cleanValueWords(out)
+	}
+	return out
+}
+
+// splitLine memisahkan "Label : nilai" (juga "Label | nilai" pada tabel).
+// OCR kadang membaca ":" sebagai ";".
 func splitLine(l ocr.Line) (string, []ocr.Word, bool) {
 	var label []string
 	for i, w := range l.Words {
-		idx := strings.IndexAny(w.Text, ":;")
+		idx := strings.IndexAny(w.Text, ":;|")
 		if idx < 0 {
 			label = append(label, w.Text)
 			continue
@@ -250,7 +358,12 @@ func splitLine(l ocr.Line) (string, []ocr.Word, bool) {
 			value = append(value, ocr.Word{Text: after, Conf: w.Conf})
 		}
 		value = append(value, l.Words[i+1:]...)
-		if len(label) == 0 || len(label) > 6 {
+		if normLabel(strings.Join(label, " ")) == "" {
+			// Pemisah di awal baris (mis. garis kiri tabel): lewati.
+			label = nil
+			continue
+		}
+		if len(label) > 6 {
 			return "", nil, false
 		}
 		return strings.Join(label, " "), value, true
@@ -278,15 +391,66 @@ func meanConf(ws []ocr.Word) float64 {
 }
 
 func extractKey(k Key, cands []candidate) (Field, bool) {
-	for _, lbl := range labels[k] {
-		for _, c := range cands {
-			if c.label != lbl {
-				continue
+	labels := active.Load().Fields[k]
+	// Cocok persis lebih dulu (urutan prioritas), baru toleran salah baca.
+	for _, fuzzy := range []bool{false, true} {
+		for _, lbl := range labels {
+			for _, c := range cands {
+				if c.label == lbl || fuzzy && labelMatch(c.label, lbl) {
+					return build(k, c), true
+				}
 			}
-			return build(k, c), true
 		}
 	}
 	return Field{}, false
+}
+
+// labelMatch: label sama dengan toleransi salah baca OCR — jumlah kata
+// sama, dan setiap kata identik atau (untuk kata ≥ 5 huruf) berjarak edit
+// ≤ 1 ("jumtah dibayar" ~ "jumlah dibayar"). Label satu kata pendek
+// ("nik", "nama") harus persis.
+func labelMatch(got, want string) bool {
+	if got == want {
+		return true
+	}
+	a, b := strings.Fields(got), strings.Fields(want)
+	if len(a) != len(b) {
+		return false
+	}
+	fuzzy := 0
+	for i := range a {
+		if a[i] == b[i] {
+			continue
+		}
+		if utf8.RuneCountInString(b[i]) < 5 || editDistance(a[i], b[i]) > 1 {
+			return false
+		}
+		fuzzy++
+	}
+	// Minimal satu kata harus persis bila label multikata.
+	return fuzzy < len(b) || len(b) == 1
+}
+
+// editDistance: jarak Levenshtein (rune).
+func editDistance(a, b string) int {
+	ra, rb := []rune(a), []rune(b)
+	prev := make([]int, len(rb)+1)
+	cur := make([]int, len(rb)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(ra); i++ {
+		cur[0] = i
+		for j := 1; j <= len(rb); j++ {
+			cost := 1
+			if ra[i-1] == rb[j-1] {
+				cost = 0
+			}
+			cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
+		}
+		prev, cur = cur, prev
+	}
+	return prev[len(rb)]
 }
 
 // build mengurai nilai kandidat menjadi Field dengan confidence
