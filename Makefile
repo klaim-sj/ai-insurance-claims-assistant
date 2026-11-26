@@ -72,10 +72,14 @@ ocr-check:
 		|| (echo "Pasang: apt-get install tesseract-ocr tesseract-ocr-ind poppler-utils" && exit 1)
 	@tesseract --list-langs 2>/dev/null | grep -qx ind || (echo "Bahasa tesseract 'ind' belum terpasang (tesseract-ocr-ind)" && exit 1)
 
-# Evaluasi OCR + ekstraksi pada sample-data/ terhadap expected.json;
-# laporan ditulis ke docs/eval/ (tidak butuh database).
+# Evaluasi OCR + ekstraksi + temuan rule engine (precision/recall per
+# finding_code) terhadap expected.json; tidak butuh database.
+#   - dataset utama  : sample-data/          -> docs/eval/
+#   - dataset holdout: sample-data/holdout/  -> docs/eval/holdout/
+#     (tidak dipakai menyetel aturan; dilaporkan terpisah apa adanya)
 eval: ocr-check
-	go run ./cmd/eval -samples sample-data -out docs/eval
+	go run ./cmd/eval -samples sample-data -out docs/eval -dataset utama
+	go run ./cmd/eval -samples sample-data/holdout -out docs/eval/holdout -dataset holdout -holdout
 
 seed: db-check
 	go run ./cmd/seed

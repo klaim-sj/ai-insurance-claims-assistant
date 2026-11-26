@@ -1,0 +1,280 @@
+{
+  "_disclaimer": "SELURUH DATA SINTETIS/FIKTIF. Set HOLDOUT: tidak dipakai menyetel aturan. Temuan bersifat 'perlu ditinjau', bukan keputusan klaim.",
+  "_generator": "scripts/gen_holdout_data.py",
+  "claim": {
+    "policy_number": "POL-UJI-2207",
+    "claimant_name": "Budi Santoso Pratama",
+    "product_type": "Kesehatan (simulasi)",
+    "received_at": "2026-09-10"
+  },
+  "evaluation_date": "2026-09-10",
+  "files": {
+    "h01_formulir_klaim_tabel_scan.jpg": {
+      "document_type": "formulir_klaim",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Ir. Budi Santoso Pratama",
+        "nik": "0000020202850002",
+        "policy_number": "POL-UJI-2207",
+        "incident_date": "2026-09-03",
+        "total_amount": 1850000
+      },
+      "note": "Nama memakai gelar 'Ir.'; setelah normalisasi sama dengan data klaim."
+    },
+    "h02_identitas_kartu_mono.png": {
+      "document_type": "identitas",
+      "mime_type": "image/png",
+      "pages": 1,
+      "fields": {
+        "full_name": "Budi Santoso Pratama",
+        "nik": "0000020202850002"
+      }
+    },
+    "h03_surat_keterangan_dokter.pdf": {
+      "document_type": "surat_keterangan_medis",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "patient_name": "Budi Santoso Pratama",
+        "admission_date": "2026-09-03"
+      }
+    },
+    "h04_kwitansi_struk.jpg": {
+      "document_type": "kuitansi",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "payer_name": "Budi Santoso Pratama",
+        "receipt_date": "2026-09-05",
+        "total_amount": 1850000
+      }
+    },
+    "h05_kwitansi_nama_singkat.jpg": {
+      "document_type": "kuitansi",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "payer_name": "B. Santoso Pratama",
+        "receipt_date": "2026-09-05",
+        "total_amount": 1850000
+      }
+    },
+    "h06_formulir_mono_polis_beda.pdf": {
+      "document_type": "formulir_klaim",
+      "mime_type": "application/pdf",
+      "pages": 1,
+      "fields": {
+        "claimant_name": "Budi Santoso Pratama",
+        "nik": "0000020202850002",
+        "policy_number": "POL-UJI-2270",
+        "incident_date": "2026-09-03",
+        "total_amount": 1850000
+      }
+    },
+    "h07_kwitansi_tanggal_depan.png": {
+      "document_type": "kuitansi",
+      "mime_type": "image/png",
+      "pages": 1,
+      "fields": {
+        "payer_name": "Budi Santoso Pratama",
+        "receipt_date": "2026-11-21",
+        "total_amount": 1850000
+      }
+    },
+    "h08_identitas_noise_berat.jpg": {
+      "document_type": "identitas",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "full_name": "Budi Santoso Pratama",
+        "nik": "0000020202850002"
+      },
+      "expected_unreadable": true,
+      "note": "Noise berat + kontras rendah + buram; sistem tidak boleh menebak."
+    },
+    "h09_surat_dokter_nama_beda_scan.jpg": {
+      "document_type": "surat_keterangan_medis",
+      "mime_type": "image/jpeg",
+      "pages": 1,
+      "fields": {
+        "patient_name": "Budi Setiawan",
+        "admission_date": "2026-09-03"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "ha",
+      "title": "Set lengkap (nama dengan gelar, tata letak berbeda)",
+      "upload": [
+        "h01_formulir_klaim_tabel_scan.jpg",
+        "h02_identitas_kartu_mono.png",
+        "h03_surat_keterangan_dokter.pdf",
+        "h04_kwitansi_struk.jpg"
+      ],
+      "expected_findings": []
+    },
+    {
+      "id": "hb",
+      "title": "Nama kwitansi disingkat",
+      "upload": [
+        "h01_formulir_klaim_tabel_scan.jpg",
+        "h02_identitas_kartu_mono.png",
+        "h03_surat_keterangan_dokter.pdf",
+        "h05_kwitansi_nama_singkat.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "NAME_MISMATCH",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "h05_kwitansi_nama_singkat.jpg",
+              "page": 1,
+              "field": "payer_name"
+            },
+            {
+              "file": "h02_identitas_kartu_mono.png",
+              "page": 1,
+              "field": "full_name"
+            }
+          ]
+        }
+      ],
+      "note": "Diharapkan severity rendah (kemungkinan singkatan)."
+    },
+    {
+      "id": "hc",
+      "title": "Nomor polis formulir berbeda",
+      "upload": [
+        "h06_formulir_mono_polis_beda.pdf",
+        "h02_identitas_kartu_mono.png",
+        "h03_surat_keterangan_dokter.pdf",
+        "h04_kwitansi_struk.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "POLICY_MISMATCH",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "h06_formulir_mono_polis_beda.pdf",
+              "page": 1,
+              "field": "policy_number"
+            },
+            {
+              "source": "claim_record",
+              "field": "policy_number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hd",
+      "title": "Tanggal kwitansi di masa depan",
+      "upload": [
+        "h01_formulir_klaim_tabel_scan.jpg",
+        "h02_identitas_kartu_mono.png",
+        "h03_surat_keterangan_dokter.pdf",
+        "h07_kwitansi_tanggal_depan.png"
+      ],
+      "expected_findings": [
+        {
+          "code": "DATE_INCONSISTENCY",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "h07_kwitansi_tanggal_depan.png",
+              "page": 1,
+              "field": "receipt_date"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "he",
+      "title": "Identitas noise berat",
+      "upload": [
+        "h01_formulir_klaim_tabel_scan.jpg",
+        "h08_identitas_noise_berat.jpg",
+        "h03_surat_keterangan_dokter.pdf",
+        "h04_kwitansi_struk.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "LOW_QUALITY_DOCUMENT",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "h08_identitas_noise_berat.jpg",
+              "page": 1,
+              "field": null
+            }
+          ]
+        },
+        {
+          "code": "MISSING_FIELD",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "h08_identitas_noise_berat.jpg",
+              "page": 1,
+              "field": "full_name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hf",
+      "title": "Nama pasien di surat dokter berbeda",
+      "upload": [
+        "h01_formulir_klaim_tabel_scan.jpg",
+        "h02_identitas_kartu_mono.png",
+        "h09_surat_dokter_nama_beda_scan.jpg",
+        "h04_kwitansi_struk.jpg"
+      ],
+      "expected_findings": [
+        {
+          "code": "NAME_MISMATCH",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "file": "h09_surat_dokter_nama_beda_scan.jpg",
+              "page": 1,
+              "field": "patient_name"
+            },
+            {
+              "file": "h02_identitas_kartu_mono.png",
+              "page": 1,
+              "field": "full_name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hg",
+      "title": "Hanya formulir dan surat dokter",
+      "upload": [
+        "h01_formulir_klaim_tabel_scan.jpg",
+        "h03_surat_keterangan_dokter.pdf"
+      ],
+      "expected_findings": [
+        {
+          "code": "MISSING_DOCUMENT",
+          "status": "perlu_ditinjau",
+          "evidence": [
+            {
+              "source": "checklist",
+              "field": "document_type"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
