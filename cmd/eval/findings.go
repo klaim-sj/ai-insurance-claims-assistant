@@ -57,6 +57,17 @@ type findingsReport struct {
 	Recall          *float64         `json:"recall"`
 	TPWithEvidence  int              `json:"tp_evidence_complete"`
 	InvalidFindings int              `json:"invalid_findings"`
+	// Substantif: tanpa NEEDS_MANUAL_VERIFICATION (temuan yang menyatakan
+	// kondisi, bukan permintaan verifikasi manual).
+	SubstantivePrecision *float64 `json:"substantive_precision"`
+	SubstantiveRecall    *float64 `json:"substantive_recall"`
+	SubstantiveTP        int      `json:"substantive_tp"`
+	SubstantiveFP        int      `json:"substantive_fp"`
+	SubstantiveFN        int      `json:"substantive_fn"`
+	// NMVInstances: jumlah temuan NEEDS_MANUAL_VERIFICATION (semua skenario).
+	NMVInstances int `json:"nmv_instances"`
+	// FindingInstances: jumlah seluruh temuan (semua skenario).
+	FindingInstances int `json:"finding_instances"`
 }
 
 func ratio(a, b int) *float64 {
@@ -75,8 +86,10 @@ func pctStr(v *float64) string {
 }
 
 func (r findingsReport) oneLine() string {
-	return fmt.Sprintf("precision %s, recall %s (TP %d, FP %d, FN %d), evidence lengkap %d/%d",
-		pctStr(r.Precision), pctStr(r.Recall), r.TP, r.FP, r.FN, r.TPWithEvidence, r.TP)
+	return fmt.Sprintf("precision %s, recall %s (TP %d, FP %d, FN %d) · substantif (tanpa NMV) precision %s, recall %s · NMV %d dari %d temuan · evidence lengkap %d/%d",
+		pctStr(r.Precision), pctStr(r.Recall), r.TP, r.FP, r.FN,
+		pctStr(r.SubstantivePrecision), pctStr(r.SubstantiveRecall), r.NMVInstances, r.FindingInstances,
+		r.TPWithEvidence, r.TP)
 }
 
 func evalFindings(exp expectedDoc, names []string, docs map[string]validation.Document, rules []validation.Rule) (findingsReport, error) {
@@ -130,6 +143,10 @@ func evalFindings(exp expectedDoc, names []string, docs map[string]validation.Do
 		for _, f := range found {
 			predicted[f.Code] = append(predicted[f.Code], f)
 			res.Instances[f.Code]++
+			rep.FindingInstances++
+			if f.Code == validation.CodeNeedsManualVerification {
+				rep.NMVInstances++
+			}
 			var srcs []string
 			for _, e := range f.Evidence {
 				switch e.Source {
@@ -203,10 +220,17 @@ func evalFindings(exp expectedDoc, names []string, docs map[string]validation.Do
 		rep.TP += s.TP
 		rep.FP += s.FP
 		rep.FN += s.FN
+		if c != validation.CodeNeedsManualVerification {
+			rep.SubstantiveTP += s.TP
+			rep.SubstantiveFP += s.FP
+			rep.SubstantiveFN += s.FN
+		}
 		rep.PerCode = append(rep.PerCode, *s)
 	}
 	rep.Precision = ratio(rep.TP, rep.TP+rep.FP)
 	rep.Recall = ratio(rep.TP, rep.TP+rep.FN)
+	rep.SubstantivePrecision = ratio(rep.SubstantiveTP, rep.SubstantiveTP+rep.SubstantiveFP)
+	rep.SubstantiveRecall = ratio(rep.SubstantiveTP, rep.SubstantiveTP+rep.SubstantiveFN)
 	return rep, nil
 }
 
@@ -236,13 +260,17 @@ func evidenceComplete(ef expectedFinding, got []validation.Finding, byID map[int
 }
 
 func findingsMarkdown(b *strings.Builder, fr findingsReport) {
-	fmt.Fprintf(b, "### Temuan (rule engine)\n\nPrecision **%s** · recall **%s** · TP %d · FP %d · FN %d · evidence lengkap %d/%d TP · temuan ditolak validator evidence %d\n\n",
-		pctStr(fr.Precision), pctStr(fr.Recall), fr.TP, fr.FP, fr.FN, fr.TPWithEvidence, fr.TP, fr.InvalidFindings)
+	fmt.Fprintf(b, "### Temuan (rule engine)\n\n- Semua kode: precision **%s** · recall **%s** · TP %d · FP %d · FN %d\n",
+		pctStr(fr.Precision), pctStr(fr.Recall), fr.TP, fr.FP, fr.FN)
+	fmt.Fprintf(b, "- Substantif (tanpa `NEEDS_MANUAL_VERIFICATION`): precision **%s** · recall **%s** · TP %d · FP %d · FN %d\n",
+		pctStr(fr.SubstantivePrecision), pctStr(fr.SubstantiveRecall), fr.SubstantiveTP, fr.SubstantiveFP, fr.SubstantiveFN)
+	fmt.Fprintf(b, "- `NEEDS_MANUAL_VERIFICATION`: %d dari %d temuan · evidence lengkap %d/%d TP · temuan ditolak validator evidence %d\n\n",
+		fr.NMVInstances, fr.FindingInstances, fr.TPWithEvidence, fr.TP, fr.InvalidFindings)
 	b.WriteString("| finding_code | TP | FP | FN | Precision | Recall |\n|---|---:|---:|---:|---:|---:|\n")
 	for _, s := range fr.PerCode {
 		fmt.Fprintf(b, "| %s | %d | %d | %d | %s | %s |\n", s.Code, s.TP, s.FP, s.FN, pctStr(s.Precision), pctStr(s.Recall))
 	}
-	b.WriteString("\n| Skenario | Diharapkan | Muncul (jumlah) | FP | FN |\n|---|---|---|---|---|\n")
+	b.WriteString("\n| Skenario | Diharapkan | Muncul (jumlah) | NMV | FP | FN |\n|---|---|---|---:|---|---|\n")
 	for _, s := range fr.Scenarios {
 		var got []string
 		for _, c := range s.Predicted {
@@ -254,7 +282,8 @@ func findingsMarkdown(b *strings.Builder, fr findingsReport) {
 			}
 			return strings.Join(xs, ", ")
 		}
-		fmt.Fprintf(b, "| %s · %s | %s | %s | %s | %s |\n", s.ID, s.Title, dash(s.Expected), dash(got), dash(s.FP), dash(s.FN))
+		fmt.Fprintf(b, "| %s · %s | %s | %s | %d | %s | %s |\n", s.ID, s.Title, dash(s.Expected), dash(got),
+			s.Instances[validation.CodeNeedsManualVerification], dash(s.FP), dash(s.FN))
 	}
 	b.WriteString("\n<details><summary>Rincian temuan per skenario (kode, severity, sumber evidence; tanpa nilai)</summary>\n\n")
 	for _, s := range fr.Scenarios {

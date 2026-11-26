@@ -19,6 +19,7 @@ import (
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/config"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/db"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/documents"
+	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/extraction"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/ocr"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/processing"
 	"github.com/klaim-sj/ai-insurance-claims-assistant/internal/server"
@@ -82,7 +83,15 @@ func run(logger *slog.Logger) error {
 	// ulang. Worker (OCR + ekstraksi) berjalan di proses ini bila diaktifkan.
 	clientCfg := processing.ClientConfig{Logger: logger, MaxWorkers: cfg.WorkerConcurrency}
 	if cfg.WorkerEnabled {
-		engine := ocr.NewExec(ocr.ExecConfig{Timeout: cfg.OCRTimeout})
+		engine := ocr.NewExec(ocr.ExecConfig{Timeout: cfg.OCRTimeout, PSM: cfg.OCRPSM})
+		if cfg.ExtractionLabelsFile != "" {
+			l, err := extraction.LoadLabelsFile(cfg.ExtractionLabelsFile)
+			if err != nil {
+				return err
+			}
+			extraction.SetLabels(l)
+			logger.Info("konfigurasi label ekstraksi dimuat", "version", l.Version)
+		}
 		if err := engine.Check(ctx); err != nil {
 			// Server tetap berjalan; job akan gagal dengan kode error yang
 			// jelas dan dapat diproses ulang setelah alat dipasang.

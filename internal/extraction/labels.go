@@ -97,17 +97,3 @@ func SetLabels(l *Labels) {
 
 // ActiveLabels mengembalikan konfigurasi label yang sedang dipakai.
 func ActiveLabels() *Labels { return active.Load() }
-
-// ConfigureFromEnv memuat EXTRACTION_LABELS_FILE bila diisi.
-func ConfigureFromEnv(getenv func(string) string) error {
-	path := strings.TrimSpace(getenv("EXTRACTION_LABELS_FILE"))
-	if path == "" {
-		return nil
-	}
-	l, err := LoadLabelsFile(path)
-	if err != nil {
-		return err
-	}
-	SetLabels(l)
-	return nil
-}
